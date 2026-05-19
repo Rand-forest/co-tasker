@@ -622,7 +622,7 @@
 
                         <!-- Action Controls (Update & Delete triggers) -->
                         <div v-if="editingColId !== col.id" class="flex items-center space-x-1 flex-shrink-0">
-                            <button @click="startEditCollaborator(col)" class="p-2 hover:bg-slate-850 text-slate-400 hover:text-slate-200 rounded-lg transition min-w-[38px] min-h-[38px] flex items-center justify-center" title="Rename">
+                            <button @click="startEditCollaborator(col)" class="p-2 hover:bg-slate-855 text-slate-400 hover:text-slate-200 rounded-lg transition min-w-[38px] min-h-[38px] flex items-center justify-center" title="Rename">
                                 <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
                             </button>
                             <button @click="confirmDeleteCollaborator(col)" class="p-2 hover:bg-red-950/40 text-slate-400 hover:text-red-400 rounded-lg transition min-w-[38px] min-h-[38px] flex items-center justify-center" title="Remove" :disabled="collaborators.length <= 1">
@@ -717,6 +717,11 @@
     <script>
         const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
+        // =========================================================================
+        // CONFIGURATION: Hardcoded Google Apps Script Web App URL
+        // =========================================================================
+        const HARDCODED_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyuHL8MqlurTacA3HXOe1qXK_jpD5RaUlOl8EsIdoQ2fD8x-ru7OjZFUyxx5Ua6mdvM/exec'; 
+
         createApp({
             setup() {
                 // Main reactive states
@@ -724,9 +729,9 @@
                 const comments = ref([]);
                 const loading = ref(false);
 
-                // Config settings
-                const sheetUrl = ref(localStorage.getItem('gtask_sheet_url') || '');
-                const sheetUrlInput = ref(localStorage.getItem('gtask_sheet_url') || '');
+                // Config settings - checks local storage first, then falls back to hardcoded URL
+                const sheetUrl = ref(localStorage.getItem('gtask_sheet_url') !== null ? localStorage.getItem('gtask_sheet_url') : HARDCODED_SHEET_URL);
+                const sheetUrlInput = ref(localStorage.getItem('gtask_sheet_url') !== null ? localStorage.getItem('gtask_sheet_url') : HARDCODED_SHEET_URL);
                 
                 // Dynamic Collaborator Directory State (CRUD Core)
                 const collaborators = ref(JSON.parse(localStorage.getItem('gtask_collaborators')) || [
@@ -1250,7 +1255,8 @@
                 };
 
                 const clearSheetConfig = () => {
-                    localStorage.removeItem('gtask_sheet_url');
+                    // Store empty string so fallback doesn't override manual disconnects
+                    localStorage.setItem('gtask_sheet_url', '');
                     sheetUrl.value = '';
                     sheetUrlInput.value = '';
                     pushToast("Disconnected from Google Sheets.");
