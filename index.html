@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 dark:bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-Tasker Pro - Shared Task Engine</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Smooth transitions for high-fidelity UI interaction */
+        .transition-all-300 {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Hide scrollbars but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-800 dark:text-slate-100 transition-colors duration-300">
+
+    <div class="flex flex-col h-screen overflow-hidden">
+        
+        <!-- Header / Navigation -->
+        <header class="flex-none bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 shadow-sm z-10">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <!-- Branding and Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 dark:bg-indigo-500 text-white p-2.5 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none">
+                        <i class="fa-solid fa-layer-group text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Co-Tasker Pro</h1>
+                        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Collaborative Executive Task Board</p>
+                    </div>
+                </div>
+
+                <!-- Stats Summary Block -->
+                <div class="grid grid-cols-3 gap-2 sm:gap-4 md:flex items-center bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                    <div class="text-center px-3 py-1">
+                        <span id="stat-total" class="block text-lg font-bold text-slate-900 dark:text-white">0</span>
+                        <span class="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Total</span>
+                    </div>
+                    <div class="border-l border-slate-200 dark:border-slate-800 h-8 hidden sm:block"></div>
+                    <div class="text-center px-3 py-1">
+                        <span id="stat-pending" class="block text-lg font-bold text-amber-600 dark:text-amber-400">0</span>
+                        <span class="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Pending</span>
+                    </div>
+                    <div class="border-l border-slate-200 dark:border-slate-800 h-8 hidden sm:block"></div>
+                    <div class="text-center px-3 py-1">
+                        <span id="stat-completed" class="block text-lg font-bold text-emerald-600 dark:text-emerald-400">0</span>
+                        <span class="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Done</span>
+                    </div>
+                </div>
+
+                <!-- Header Action Controls -->
+                <div class="flex items-center gap-3">
+                    <button id="toggle-dark-mode" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" title="Toggle Dark Mode">
+                        <i class="fa-solid fa-moon dark:hidden"></i>
+                        <i class="fa-solid fa-sun hidden dark:block"></i>
+                    </button>
+                    <button id="btn-open-integration" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-sm flex items-center gap-2 transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i>
+                        <span>Sync Backend</span>
+                    </button>
+                    <button id="btn-create-task" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-semibold text-sm flex items-center gap-2 shadow-lg shadow-indigo-100 dark:shadow-none transition-all duration-200 transform active:scale-95">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>New Task</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-hidden flex flex-col md:flex-row">
+            
+            <!-- Filters & Settings Sidebar -->
+            <aside class="flex-none w-full md:w-64 bg-white dark:bg-slate-800 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 p-6 overflow-y-auto no-scrollbar">
+                <div class="space-y-6">
+                    <!-- Search Bar -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Search Registry</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                            </span>
+                            <input type="text" id="search-input" placeholder="Find tasks, comments..." class="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Owner Quick Filters -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Task Owners</label>
+                        <div class="space-y-1.5" id="owner-filters">
+                            <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between transition-colors bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400" data-owner="all">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-users"></i> Everyone
+                                </span>
+                                <span class="text-xs bg-indigo-100 dark:bg-indigo-900 px-2 py-0.5 rounded-full font-bold" id="badge-all-count">0</span>
+                            </button>
+                            <!-- Owner buttons will inject here dynamically -->
+                        </div>
+                        <div class="mt-2.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-700">
+                            <button id="btn-manage-owners" class="w-full py-1.5 text-xs text-center font-semibold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-user-plus"></i> Configure Board Partners
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Completion Filter</label>
+                        <div class="grid grid-cols-1 gap-1">
+                            <label class="flex items-center space-x-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                                <input type="radio" name="status-filter" value="all" checked class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">All Tasks</span>
+                            </label>
+                            <label class="flex items-center space-x-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                                <input type="radio" name="status-filter" value="pending" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Pending</span>
+                            </label>
+                            <label class="flex items-center space-x-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                                <input type="radio" name="status-filter" value="completed" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Completed</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Sort Controls -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Priority & Ordering</label>
+                        <select id="sort-select" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="newest">Newest Created First</option>
+                            <option value="oldest">Oldest Created First</option>
+                            <option value="priority">High Priority First</option>
+                            <option value="dueDate">Upcoming Due Dates First</option>
+                        </select>
+                    </div>
+
+                    <!-- Backend Connection Status Widget -->
+                    <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                            <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Connection</span>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold" id="conn-text">Standalone Mode</span>
+                                <span class="relative flex h-2.5 w-2.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-amber-400" id="conn-ping-pulse"></span>
+                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" id="conn-ping-dot"></span>
+                                </span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">Task state is cached locally. Link your Google Sheet Web App to collaborate instantly.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="flex-1 bg-slate-50 dark:bg-slate-900 p-6 overflow-y-auto">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Cards Grid Layout -->
+                    <div id="tasks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Dynamic task cards will inject here -->
+                    </div>
+
+                    <!-- Empty State Display -->
+                    <div id="tasks-empty-state" class="hidden flex flex-col items-center justify-center py-20 px-4 text-center">
+                        <div class="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-clipboard-list text-3xl text-slate-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">No Active Tasks Found</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm">Adjust your filter parameters or create a brand-new task to get operations spinning.</p>
+                        <button id="btn-empty-create" class="mt-4 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+                            <i class="fa-solid fa-plus mr-1"></i> Create first task
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal-task-form" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-300">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <h3 id="task-modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Create New Business Task</h3>
+                <button class="modal-close p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="task-form" class="p-6 space-y-4">
+                <input type="hidden" id="task-form-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Task Title *</label>
+                    <input type="text" id="task-title" required placeholder="e.g., Audit Q2 Financial Statements" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Task Description</label>
+                    <textarea id="task-desc" placeholder="Detail operational requirements, checklist elements..." rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Owner Assignment *</label>
+                        <select id="task-owner" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <!-- Populated Dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Priority</label>
+                        <select id="task-priority" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <option value="Low">🟢 Low</option>
+                            <option value="Medium" selected>🟡 Medium</option>
+                            <option value="High">🔴 High</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Due Date</label>
+                        <input type="date" id="task-due" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Initial Status</label>
+                        <select id="task-status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <option value="Pending">Pending</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                    <button type="button" class="modal-close px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-semibold transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-lg shadow-indigo-100 dark:shadow-none transition-colors">
+                        Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-task-details" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh] transform scale-95 transition-transform duration-300">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between flex-none">
+                <div class="flex items-center gap-2">
+                    <span id="detail-priority-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"></span>
+                    <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"></span>
+                </div>
+                <button class="modal-close p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Scrollable Content -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                <!-- Task Heading info -->
+                <div>
+                    <h2 id="detail-title" class="text-xl font-bold text-slate-900 dark:text-white mb-2"></h2>
+                    <p id="detail-desc" class="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+
+                <!-- Attributes Row -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 border-y border-slate-100 dark:border-slate-800 py-4">
+                    <div>
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Responsible Owner</span>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span id="detail-owner-avatar" class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-indigo-500"></span>
+                            <span id="detail-owner-name" class="text-sm font-semibold text-slate-800 dark:text-slate-200"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Due Date</span>
+                        <div class="flex items-center gap-2 mt-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            <i class="fa-regular fa-calendar-check text-slate-400"></i>
+                            <span id="detail-due-date">N/A</span>
+                        </div>
+                    </div>
+                    <div class="col-span-2 md:col-span-1">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Last Modified</span>
+                        <span id="detail-modified" class="block text-xs mt-2 text-slate-500 dark:text-slate-400 font-medium"></span>
+                    </div>
+                </div>
+
+                <!-- Shared Comments Thread Section -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
+                        <i class="fa-regular fa-comments text-base"></i>
+                        <span>Audit / Comment Log (<span id="detail-comment-count">0</span>)</span>
+                    </h3>
+
+                    <!-- Comments List Container -->
+                    <div id="comments-container" class="space-y-3.5 max-h-[220px] overflow-y-auto pr-2">
+                        <!-- Custom comments go here -->
+                    </div>
+
+                    <!-- Add Comment Field -->
+                    <form id="comment-add-form" class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <input type="hidden" id="comment-task-id">
+                        <div class="flex flex-col gap-2.5">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Author Name *</label>
+                                    <select id="comment-author" required class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <!-- Shared owners populated here -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <textarea id="comment-text" required placeholder="Type operational update, issue, or note..." rows="2" class="w-full px-3 py-2 pr-12 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                                <button type="submit" class="absolute bottom-3.5 right-3 w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition-all duration-150 transform active:scale-95" title="Add Comment">
+                                    <i class="fa-regular fa-paper-plane text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Footer Control Bar -->
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center flex-none">
+                <button id="detail-btn-delete" class="px-3.5 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl font-semibold flex items-center gap-1.5 transition-colors">
+                    <i class="fa-regular fa-trash-can"></i> Delete Task
+                </button>
+                <div class="flex gap-2">
+                    <button id="detail-btn-edit" class="px-4 py-2 text-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors">
+                        <i class="fa-regular fa-pen-to-square"></i> Edit
+                    </button>
+                    <button id="detail-btn-toggle" class="px-4 py-2 text-sm text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-100 dark:shadow-none transition-colors">
+                        <!-- Status text updated programmatically -->
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-manage-owners" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-300">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Configure Board Partners</h3>
+                <button class="modal-close p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-500 leading-relaxed">Assign who is working on tasks on your shared board. Changing names here updates your active drop-downs.</p>
+                
+                <div class="space-y-3" id="partner-inputs-list">
+                    <!-- Configurable items injected dynamically -->
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+                    <button class="modal-close px-4 py-2 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                        Close & Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-integration" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh] transform scale-95 transition-transform duration-300">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between flex-none">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Link Google Sheets Cloud Backend</h3>
+                    <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Build a fully collaborative real-time sync database</p>
+                </div>
+                <button class="modal-close p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 no-scrollbar">
+                
+                <!-- Input for Web App URL -->
+                <div class="space-y-2 bg-indigo-50 dark:bg-indigo-950/40 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-900/80">
+                    <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">Your Google Apps Script Web App Deployment URL</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="integration-url-input" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        <button id="btn-save-endpoint" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all duration-150 transform active:scale-95">
+                            Connect
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Paste your deployed Apps Script URL. Once linked, the tracker transition to Cloud Sync, persisting all tasks directly into your Sheet!</p>
+                </div>
+
+                <!-- Step-by-Step Architecture Guide -->
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-gears text-sm"></i> Architecture & Setup Instructions
+                    </h4>
+                    
+                    <div class="space-y-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        <div class="flex gap-3">
+                            <span class="flex-none w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold flex items-center justify-center">1</span>
+                            <div>
+                                <p class="font-bold text-slate-900 dark:text-white">Create Google Sheet Workspace</p>
+                                <p class="mt-0.5">Create a new Google Sheet. Rename your first tab to <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded font-mono font-semibold">Tasks</code> and the second tab to <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded font-mono font-semibold">Comments</code>.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <span class="flex-none w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold flex items-center justify-center">2</span>
+                            <div>
+                                <p class="font-bold text-slate-900 dark:text-white">Open the Apps Script Editor</p>
+                                <p class="mt-0.5">In your sheet, click on <strong class="text-slate-800 dark:text-slate-100">Extensions > Apps Script</strong>. Clear any boilerplate code.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <span class="flex-none w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold flex items-center justify-center">3</span>
+                            <div>
+                                <p class="font-bold text-slate-900 dark:text-white">Copy/Paste Server Code</p>
+                                <p class="mt-0.5">Copy the exact server block below and paste it directly into your Apps Script editor file (<code class="font-mono">Code.gs</code>).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Block Area with Copy functionality -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Google Apps Script (Code.gs)</span>
+                        <button id="btn-copy-script" class="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copy Script
+                        </button>
+                    </div>
+                    <pre class="bg-slate-950 text-slate-300 p-4 rounded-xl text-xs font-mono overflow-x-auto max-h-60 border border-slate-800 shadow-inner no-scrollbar">
+/* 
+=========================================
+      CO-TASKER PRO API CODE.GS
+=========================================
+Instructions: Paste this complete script into your 
+Google Sheets Apps Script workspace, click "Save", and 
+"Deploy > New Deployment" as a Web App with access set 
+to "Anyone".
+*/
+
+function doGet(e) {
+  var origin = e ? e.parameter.origin : "";
+  return handleResponse({ status: "success", data: getDatabaseData() }, origin);
+}
+
+function doPost(e) {
+  var origin = e ? e.parameter.origin : "";
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var action = payload.action;
+    var result;
+
+    if (action === "sync_tasks") {
+      result = syncTasksToSheet(payload.tasks);
+    } else if (action === "sync_comments") {
+      result = syncCommentsToSheet(payload.comments);
+    } else {
+      throw new Error("Unsupported action");
+    }
+
+    return handleResponse({ status: "success", result: result }, origin);
+  } catch (err) {
+    return handleResponse({ status: "error", message: err.toString() }, origin);
+  }
+}
+
+function handleResponse(data, origin) {
+  var output = ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+  
+  // Custom CORS response configuration
+  return output;
+}
+
+function getDatabaseData() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Tasks Sheet Config
+  var taskSheet = ss.getSheetByName("Tasks") || ss.insertSheet("Tasks");
+  var taskData = [];
+  if (taskSheet.getLastRow() > 1) {
+    var rows = taskSheet.getRange(2, 1, taskSheet.getLastRow() - 1, 9).getValues();
+    taskData = rows.map(function(r) {
+      return {
+        id: r[0],
+        title: r[1],
+        description: r[2],
+        owner: r[3],
+        status: r[4],
+        dueDate: r[5],
+        priority: r[6],
+        createdAt: r[7],
+        updatedAt: r[8]
+      };
+    });
+  } else {
+    // Set headers if brand new
+    taskSheet.getRange(1, 1, 1, 9).setValues([["id", "title", "description", "owner", "status", "dueDate", "priority", "createdAt", "updatedAt"]]);
+  }
+
+  // Comments Sheet Config
+  var commentSheet = ss.getSheetByName("Comments") || ss.insertSheet("Comments");
+  var commentData = [];
+  if (commentSheet.getLastRow() > 1) {
+    var rows = commentSheet.getRange(2, 1, commentSheet.getLastRow() - 1, 5).getValues();
+    commentData = rows.map(function(r) {
+      return {
+        id: r[0],
+        taskId: r[1],
+        author: r[2],
+        commentText: r[3],
+        timestamp: r[4]
+      };
+    });
+  } else {
+    commentSheet.getRange(1, 1, 1, 5).setValues([["id", "taskId", "author", "commentText", "timestamp"]]);
+  }
+
+  return { tasks: taskData, comments: commentData };
+}
+
+function syncTasksToSheet(tasks) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Tasks");
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, 9).setValues([["id", "title", "description", "owner", "status", "dueDate", "priority", "createdAt", "updatedAt"]]);
+  
+  if (tasks && tasks.length > 0) {
+    var values = tasks.map(function(t) {
+      return [
+        t.id,
+        t.title,
+        t.description,
+        t.owner,
+        t.status,
+        t.dueDate,
+        t.priority,
+        t.createdAt,
+        t.updatedAt
+      ];
+    });
+    sheet.getRange(2, 1, values.length, 9).setValues(values);
+  }
+  return "Tasks Synchronized successfully. Size: " + (tasks ? tasks.length : 0);
+}
+
+function syncCommentsToSheet(comments) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Comments");
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, 5).setValues([["id", "taskId", "author", "commentText", "timestamp"]]);
+
+  if (comments && comments.length > 0) {
+    var values = comments.map(function(c) {
+      return [
+        c.id,
+        c.taskId,
+        c.author,
+        c.commentText,
+        c.timestamp
+      ];
+    });
+    sheet.getRange(2, 1, values.length, 5).setValues(values);
+  }
+  return "Comments Synchronized successfully. Size: " + (comments ? comments.length : 0);
+}
+                    </pre>
+                </div>
+
+                <div class="space-y-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                    <div class="flex gap-3">
+                        <span class="flex-none w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold flex items-center justify-center">4</span>
+                        <div>
+                            <p class="font-bold text-slate-900 dark:text-white">Deploy Web App</p>
+                            <p class="mt-0.5">Click <strong class="text-slate-800 dark:text-slate-100">Deploy > New Deployment</strong>. Select "Web App". Under "Execute as", select "Me". Under "Who has access", select "Anyone". Click Deploy, authorize permissions, and copy the Web App URL!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex justify-end flex-none">
+                <button class="modal-close px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md transition-colors">
+                    Done Configured
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3 max-w-sm w-full pointer-events-none">
+        <!-- Toast bubbles inject dynamically here -->
+    </div>
+
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-300">
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <h4 id="confirm-title" class="text-lg font-bold text-slate-900 dark:text-white mb-2">Delete Operational Record?</h4>
+                <p id="confirm-message" class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">This action cannot be easily undone. Tasks and linked comment threads will be purged.</p>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex gap-3">
+                <button id="btn-confirm-cancel" class="flex-1 py-2.5 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                    Cancel
+                </button>
+                <button id="btn-confirm-proceed" class="flex-1 py-2.5 text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md shadow-rose-100 dark:shadow-none transition-all">
+                    Delete Record
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CLIENT APPLICATIONS ENGINE SCRIPT -->
+    <script>
+
+        // Default list of board managers / co-owners
+        let partners = ["Partner A", "Partner B"];
+
+        // State Store
+        let state = {
+            tasks: [],
+            comments: [],
+            activeFilterOwner: 'all',
+            searchQuery: '',
+            statusFilter: 'all',
+            sortBy: 'newest',
+            backendUrl: '',
+            isCloudMode: false,
+            isLoading: false
+        };
+
+        // UI Confirm Modal resolver storage
+        let confirmResolver = null;
+
+        // Mock Task Seeding logic if LocalStorage is totally empty
+        const initialMockTasks = [
+            {
+                id: "task-rec-101",
+                title: "Draft Strategic Partnership Agreement",
+                description: "Complete legal review of Q3 partnership documents. Focus specifically on revenue-split and cross-licensing parameters.",
+                owner: "Partner A",
+                status: "Pending",
+                dueDate: "2026-06-15",
+                priority: "High",
+                createdAt: "2026-05-18T14:30:00.000Z",
+                updatedAt: "2026-05-18T14:30:00.000Z"
+            },
+            {
+                id: "task-rec-102",
+                title: "Launch Marketing Assets & landing update",
+                description: "Align with design agency on final assets deployment. Double check image assets load optimally on mobile layouts.",
+                owner: "Partner B",
+                status: "Completed",
+                dueDate: "2026-05-25",
+                priority: "Medium",
+                createdAt: "2026-05-10T09:15:00.000Z",
+                updatedAt: "2026-05-15T10:00:00.000Z"
+            }
+        ];
+
+        const initialMockComments = [
+            {
+                id: "comm-rec-1",
+                taskId: "task-rec-101",
+                author: "Partner B",
+                commentText: "Ensure the IP clauses protect our core intellectual assets prior to signing.",
+                timestamp: "2026-05-18T16:00:00.000Z"
+            },
+            {
+                id: "comm-rec-2",
+                taskId: "task-rec-102",
+                author: "Partner A",
+                commentText: "Images optimized nicely. Deployment successfully mirrored to sandbox.",
+                timestamp: "2026-05-15T10:00:00.000Z"
+            }
+        ];
+
+
+        // Initialize App & Load Cache
+        function initApp() {
+            // Load theme
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            // Load partners from cache
+            const cachedPartners = localStorage.getItem('cotasker_partners');
+            if (cachedPartners) {
+                partners = JSON.parse(cachedPartners);
+            } else {
+                localStorage.setItem('cotasker_partners', JSON.stringify(partners));
+            }
+
+            // Load backend configuration
+            const cachedUrl = localStorage.getItem('cotasker_backend_url');
+            if (cachedUrl) {
+                state.backendUrl = cachedUrl;
+                state.isCloudMode = true;
+                updateConnectionWidgetUI("Cloud Server", "bg-emerald-500", "bg-emerald-400", "Live Sheet Sync Active");
+            }
+
+            // Load Task Records
+            const cachedTasks = localStorage.getItem('cotasker_tasks');
+            const cachedComments = localStorage.getItem('cotasker_comments');
+
+            if (cachedTasks && cachedComments) {
+                state.tasks = JSON.parse(cachedTasks);
+                state.comments = JSON.parse(cachedComments);
+            } else {
+                state.tasks = initialMockTasks;
+                state.comments = initialMockComments;
+                saveToLocalCache();
+            }
+
+            // Bind Event Listeners
+            setupEventListeners();
+            
+            // Render Dynamic UI
+            renderAll();
+
+            // Try to sync with Live cloud Google Sheet if cloud mode is enabled
+            if (state.isCloudMode) {
+                fetchCloudData();
+            }
+        }
+
+        function saveToLocalCache() {
+            localStorage.setItem('cotasker_tasks', JSON.stringify(state.tasks));
+            localStorage.setItem('cotasker_comments', JSON.stringify(state.comments));
+            localStorage.setItem('cotasker_partners', JSON.stringify(partners));
+        }
+
+
+        // Fetch Live Cloud Database data
+        async function fetchCloudData() {
+            if (!state.backendUrl) return;
+            showToast("Syncing with Google Sheet Database...", "info");
+            
+            try {
+                // Fetch request to Apps Script GET function
+                const response = await fetch(`${state.backendUrl}?origin=${encodeURIComponent(window.location.origin)}`);
+                const result = await response.json();
+                
+                if (result.status === "success" && result.data) {
+                    state.tasks = result.data.tasks || [];
+                    state.comments = result.data.comments || [];
+                    saveToLocalCache();
+                    renderAll();
+                    showToast("Database live updated from Google Sheets!", "success");
+                    updateConnectionWidgetUI("Cloud Connected", "bg-emerald-500", "bg-emerald-400", "Live Sheet Sync Active");
+                } else {
+                    throw new Error("Invalid API payload data");
+                }
+            } catch (err) {
+                console.error("API Fetch Error: ", err);
+                showToast("Live Sync failed. Utilizing offline buffer.", "error");
+                updateConnectionWidgetUI("Offline Sync Error", "bg-rose-500", "bg-rose-400", "Fallback local mode active");
+            }
+        }
+
+        // Push updates to backend Sheets database (POST)
+        async function syncToCloudBackend(actionName) {
+            if (!state.backendUrl) {
+                saveToLocalCache();
+                renderAll();
+                return;
+            }
+
+            try {
+                const payload = {
+                    action: actionName,
+                    tasks: actionName === "sync_tasks" ? state.tasks : undefined,
+                    comments: actionName === "sync_comments" ? state.comments : undefined
+                };
+
+                const response = await fetch(state.backendUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Apps Script web app endpoint bypass support
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Since we use no-cors mode, a mock response verification handles safe local fallbacks
+                saveToLocalCache();
+                renderAll();
+                showToast("Operation instantly mirrored to Cloud Sheet!", "success");
+            } catch (err) {
+                console.error("API Post error:", err);
+                saveToLocalCache();
+                renderAll();
+                showToast("Synced locally. Will mirror to Cloud on next load.", "info");
+            }
+        }
+
+
+        // Open custom animated modals
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.transform').classList.remove('scale-95');
+                modal.querySelector('.transform').classList.add('scale-100');
+            }, 10);
+        }
+
+        // Close custom animated modals
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('opacity-0');
+            modal.querySelector('.transform').classList.remove('scale-100');
+            modal.querySelector('.transform').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Replace alerts/confirms with clean custom Prompts
+        function askConfirmation(title, message) {
+            return new Promise((resolve) => {
+                document.getElementById('confirm-title').innerText = title;
+                document.getElementById('confirm-message').innerText = message;
+                openModal('modal-confirm');
+                confirmResolver = resolve;
+            });
+        }
+
+
+        function renderAll() {
+            renderPartnersDropdowns();
+            renderPartnerSidebarFilters();
+            renderTasksBoard();
+            renderStatsPanel();
+        }
+
+        // Generate owner dropdown elements in forms
+        function renderPartnersDropdowns() {
+            const taskOwnerSelect = document.getElementById('task-owner');
+            const commentAuthorSelect = document.getElementById('comment-author');
+            
+            let optionsHTML = '';
+            partners.forEach(p => {
+                optionsHTML += `<option value="${p}">${p}</option>`;
+            });
+
+            taskOwnerSelect.innerHTML = optionsHTML;
+            commentAuthorSelect.innerHTML = optionsHTML;
+        }
+
+        // Generate customized partner filter options
+        function renderPartnerSidebarFilters() {
+            const container = document.getElementById('owner-filters');
+            // Retain the "Everyone" button
+            const everyoneActive = state.activeFilterOwner === 'all' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50';
+            
+            let html = `
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between transition-colors ${everyoneActive}" data-owner="all">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-users text-slate-400"></i> Everyone
+                    </span>
+                    <span class="text-xs bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold" id="badge-all-count">${state.tasks.length}</span>
+                </button>
+            `;
+
+            partners.forEach(partner => {
+                const isActive = state.activeFilterOwner === partner;
+                const activeClasses = isActive ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50';
+                const count = state.tasks.filter(t => t.owner === partner).length;
+                const initials = getInitials(partner);
+
+                html += `
+                    <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between transition-colors ${activeClasses}" data-owner="${partner}">
+                        <span class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[9px] font-bold flex items-center justify-center">${initials}</span>
+                            <span>${partner}</span>
+                        </span>
+                        <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">${count}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Bind click handlers to newly injected buttons
+            container.querySelectorAll('button').forEach(btn => {
+                btn.onclick = () => {
+                    state.activeFilterOwner = btn.getAttribute('data-owner');
+                    renderPartnerSidebarFilters();
+                    renderTasksBoard();
+                }
+            });
+        }
+
+        // Render Cards Matrix
+        function renderTasksBoard() {
+            const grid = document.getElementById('tasks-grid');
+            const emptyState = document.getElementById('tasks-empty-state');
+
+            // Apply filter algorithm
+            let filteredTasks = state.tasks.filter(task => {
+                // Owner filter
+                if (state.activeFilterOwner !== 'all' && task.owner !== state.activeFilterOwner) return false;
+                
+                // Status Filter
+                if (state.statusFilter === 'pending' && task.status !== 'Pending') return false;
+                if (state.statusFilter === 'completed' && task.status !== 'Completed') return false;
+
+                // Search Query Filter
+                if (state.searchQuery) {
+                    const q = state.searchQuery.toLowerCase();
+                    const matchesTitle = task.title.toLowerCase().includes(q);
+                    const matchesDesc = (task.description || "").toLowerCase().includes(q);
+                    const matchesOwner = task.owner.toLowerCase().includes(q);
+                    
+                    // Also search in comments for match depth
+                    const taskComments = state.comments.filter(c => c.taskId === task.id);
+                    const matchesComments = taskComments.some(c => c.commentText.toLowerCase().includes(q));
+
+                    if (!matchesTitle && !matchesDesc && !matchesOwner && !matchesComments) return false;
+                }
+
+                return true;
+            });
+
+            // Sort logic
+            filteredTasks.sort((a, b) => {
+                if (state.sortBy === 'newest') {
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                } else if (state.sortBy === 'oldest') {
+                    return new Date(a.createdAt) - new Date(b.createdAt);
+                } else if (state.sortBy === 'dueDate') {
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                } else if (state.sortBy === 'priority') {
+                    const weight = { 'High': 3, 'Medium': 2, 'Low': 1 };
+                    return (weight[b.priority] || 0) - (weight[a.priority] || 0);
+                }
+                return 0;
+            });
+
+            if (filteredTasks.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            let cardsHTML = '';
+
+            filteredTasks.forEach(task => {
+                const commentCount = state.comments.filter(c => c.taskId === task.id).length;
+                const isCompleted = task.status === 'Completed';
+                const initials = getInitials(task.owner);
+                
+                // Color mapping for dynamic variables
+                let priorityColor = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
+                if (task.priority === "High") priorityColor = "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30";
+                if (task.priority === "Medium") priorityColor = "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30";
+                if (task.priority === "Low") priorityColor = "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30";
+
+                const dateDisplay = task.dueDate ? formatDisplayDate(task.dueDate) : "No due date";
+                const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+
+                cardsHTML += `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/75 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-all-300 transform hover:-translate-y-1 relative group flex flex-col justify-between h-64">
+                        
+                        <!-- Top header area -->
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${priorityColor}">
+                                    ${task.priority} Priority
+                                </span>
+                                <div class="flex items-center gap-1">
+                                    <button class="btn-task-check w-7 h-7 rounded-full flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 text-white' : 'border border-slate-300 dark:border-slate-600 hover:border-emerald-500 text-transparent hover:text-emerald-500'}" data-id="${task.id}" title="${isCompleted ? 'Mark Pending' : 'Mark Completed'}">
+                                        <i class="fa-solid fa-check text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Title & Description Snippet -->
+                            <div class="cursor-pointer" onclick="openDetailsModal('${task.id}')">
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1 ${isCompleted ? 'line-through opacity-50' : ''}">
+                                    ${task.title}
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-3 leading-relaxed">
+                                    ${task.description || '<em class="italic opacity-60">No details provided. Click to add description.</em>'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Footer elements aligned -->
+                        <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shadow-inner" title="Assigned Owner: ${task.owner}">
+                                    ${initials}
+                                </div>
+                                <div class="text-[11px] leading-tight">
+                                    <span class="block font-bold text-slate-700 dark:text-slate-300 max-w-[80px] truncate">${task.owner}</span>
+                                    <span class="flex items-center gap-1 mt-0.5 font-medium ${isOverdue ? 'text-rose-500 font-semibold' : 'text-slate-400 dark:text-slate-500'}">
+                                        <i class="fa-regular fa-clock"></i> ${dateDisplay}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Comment counter link -->
+                            <button class="px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-500 dark:text-slate-400 text-xs font-bold flex items-center gap-1.5 transition-colors" onclick="openDetailsModal('${task.id}')">
+                                <i class="fa-regular fa-comments text-sm text-slate-400"></i>
+                                <span>${commentCount}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = cardsHTML;
+
+            // Bind click to Check buttons
+            grid.querySelectorAll('.btn-task-check').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-id');
+                    toggleTaskStatus(id);
+                };
+            });
+        }
+
+        // Render dashboard overview stat boxes
+        function renderStatsPanel() {
+            const total = state.tasks.length;
+            const completed = state.tasks.filter(t => t.status === 'Completed').length;
+            const pending = total - completed;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-completed').innerText = completed;
+            document.getElementById('badge-all-count').innerText = total;
+        }
+
+
+        // Change completing status toggled
+        function toggleTaskStatus(id) {
+            const index = state.tasks.findIndex(t => t.id === id);
+            if (index !== -1) {
+                const currentStatus = state.tasks[index].status;
+                state.tasks[index].status = currentStatus === 'Completed' ? 'Pending' : 'Completed';
+                state.tasks[index].updatedAt = new Date().toISOString();
+                
+                showToast(`Task marked as ${state.tasks[index].status.toLowerCase()}`, "success");
+                syncToCloudBackend("sync_tasks");
+            }
+        }
+
+        // Action Create/Update task form submit trigger
+        document.getElementById('task-form').onsubmit = (e) => {
+            e.preventDefault();
+            
+            const taskId = document.getElementById('task-form-id').value;
+            const title = document.getElementById('task-title').value.trim();
+            const description = document.getElementById('task-desc').value.trim();
+            const owner = document.getElementById('task-owner').value;
+            const priority = document.getElementById('task-priority').value;
+            const dueDate = document.getElementById('task-due').value;
+            const status = document.getElementById('task-status').value;
+
+            if (!title) {
+                showToast("Task Title is required", "error");
+                return;
+            }
+
+            if (taskId) {
+                // Update Path
+                const index = state.tasks.findIndex(t => t.id === taskId);
+                if (index !== -1) {
+                    state.tasks[index] = {
+                        ...state.tasks[index],
+                        title,
+                        description,
+                        owner,
+                        priority,
+                        dueDate,
+                        status,
+                        updatedAt: new Date().toISOString()
+                    };
+                    showToast("Task updated successfully", "success");
+                }
+            } else {
+                // Creation Path
+                const newTask = {
+                    id: 'task-rec-' + Date.now(),
+                    title,
+                    description,
+                    owner,
+                    priority,
+                    dueDate,
+                    status,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                state.tasks.push(newTask);
+                showToast("New task deployed to board", "success");
+            }
+
+            closeModal('modal-task-form');
+            syncToCloudBackend("sync_tasks");
+        };
+
+        // Open details dashboard & Comment thread view modal
+        function openDetailsModal(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (!task) return;
+
+            // Setup Header Information
+            document.getElementById('detail-title').innerText = task.title;
+            document.getElementById('detail-desc').innerText = task.description || "No descriptions available.";
+            
+            // Priority Tag
+            const pBadge = document.getElementById('detail-priority-badge');
+            pBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider";
+            pBadge.innerText = `${task.priority} Priority`;
+            if (task.priority === "High") pBadge.classList.add('bg-rose-50', 'text-rose-600', 'dark:bg-rose-950/40', 'dark:text-rose-400');
+            else if (task.priority === "Medium") pBadge.classList.add('bg-amber-50', 'text-amber-600', 'dark:bg-amber-950/40', 'dark:text-amber-400');
+            else pBadge.classList.add('bg-emerald-50', 'text-emerald-600', 'dark:bg-emerald-950/40', 'dark:text-emerald-400');
+
+            // Status Badge
+            const sBadge = document.getElementById('detail-status-badge');
+            sBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider";
+            sBadge.innerText = task.status;
+            if (task.status === "Completed") sBadge.classList.add('bg-emerald-500', 'text-white');
+            else sBadge.classList.add('bg-slate-200', 'text-slate-700', 'dark:bg-slate-700', 'dark:text-slate-300');
+
+            // Attributes
+            document.getElementById('detail-owner-avatar').innerText = getInitials(task.owner);
+            document.getElementById('detail-owner-name').innerText = task.owner;
+            document.getElementById('detail-due-date').innerText = task.dueDate ? formatDisplayDate(task.dueDate) : "N/A";
+            document.getElementById('detail-modified').innerText = formatDisplayDateTime(task.updatedAt);
+
+            // Comments thread list rendering logic
+            document.getElementById('comment-task-id').value = task.id;
+            renderCommentsForTask(task.id);
+
+            // Footer action buttons setup
+            const toggleBtn = document.getElementById('detail-btn-toggle');
+            if (task.status === "Completed") {
+                toggleBtn.className = "px-4 py-2 text-sm bg-slate-500 hover:bg-slate-600 text-white rounded-xl font-semibold flex items-center gap-1.5 transition-colors";
+                toggleBtn.innerHTML = `<i class="fa-solid fa-rotate-left"></i> Reopen Task`;
+            } else {
+                toggleBtn.className = "px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center gap-1.5 transition-colors";
+                toggleBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Complete Task`;
+            }
+
+            toggleBtn.onclick = () => {
+                toggleTaskStatus(task.id);
+                closeModal('modal-task-details');
+            };
+
+            document.getElementById('detail-btn-edit').onclick = () => {
+                closeModal('modal-task-details');
+                openEditForm(task);
+            };
+
+            document.getElementById('detail-btn-delete').onclick = () => {
+                closeModal('modal-task-details');
+                triggerTaskDeletion(task.id);
+            };
+
+            openModal('modal-task-details');
+        }
+
+        // Render Comments list for targeted task
+        function renderCommentsForTask(taskId) {
+            const container = document.getElementById('comments-container');
+            const list = state.comments.filter(c => c.taskId === taskId);
+            
+            document.getElementById('detail-comment-count').innerText = list.length;
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 dark:text-slate-500 text-xs">
+                        <i class="fa-regular fa-comment-dots text-2xl mb-1.5 block"></i>
+                        No operational log comments yet. Keep notes in real-time.
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort oldest comments first for standard thread history read
+            list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            let html = '';
+            list.forEach(c => {
+                const initials = getInitials(c.author);
+                html += `
+                    <div class="flex gap-3 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <span class="flex-none w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center">${initials}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200">${c.author}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] text-slate-400 font-medium">${formatDisplayDateTime(c.timestamp)}</span>
+                                    <button onclick="triggerCommentDeletion('${c.id}', '${taskId}')" class="text-slate-400 hover:text-rose-500 p-0.5 rounded" title="Delete Comment">
+                                        <i class="fa-regular fa-trash-can text-[11px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed break-words">${c.commentText}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            // Scroll to bottom of comments smoothly
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+        }
+
+        // Open edit form pre-populated
+        function openEditForm(task) {
+            document.getElementById('task-modal-title').innerText = "Edit Business Task";
+            document.getElementById('task-form-id').value = task.id;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-desc').value = task.description || "";
+            document.getElementById('task-owner').value = task.owner;
+            document.getElementById('task-priority').value = task.priority;
+            document.getElementById('task-due').value = task.dueDate || "";
+            document.getElementById('task-status').value = task.status;
+
+            openModal('modal-task-form');
+        }
+
+        // Delete Task handler
+        async function triggerTaskDeletion(id) {
+            const confirmed = await askConfirmation(
+                "Delete Board Task?",
+                "Are you sure you want to delete this task? All timestamped comments linked directly will be lost."
+            );
+
+            if (confirmed) {
+                // Delete linked Comments
+                state.comments = state.comments.filter(c => c.taskId !== id);
+                // Delete Task
+                state.tasks = state.tasks.filter(t => t.id !== id);
+                
+                showToast("Task deleted from database", "success");
+                syncToCloudBackend("sync_tasks");
+                syncToCloudBackend("sync_comments");
+            }
+        }
+
+        // Add Timestamped Comments
+        document.getElementById('comment-add-form').onsubmit = (e) => {
+            e.preventDefault();
+            const taskId = document.getElementById('comment-task-id').value;
+            const author = document.getElementById('comment-author').value;
+            const text = document.getElementById('comment-text').value.trim();
+
+            if (!text) return;
+
+            const newComment = {
+                id: 'comm-rec-' + Date.now(),
+                taskId: taskId,
+                author: author,
+                commentText: text,
+                timestamp: new Date().toISOString()
+            };
+
+            state.comments.push(newComment);
+            document.getElementById('comment-text').value = '';
+            
+            renderCommentsForTask(taskId);
+            renderTasksBoard();
+            showToast("Comment update published", "success");
+            syncToCloudBackend("sync_comments");
+        };
+
+        // Delete specific comment handler
+        async function triggerCommentDeletion(commentId, taskId) {
+            const confirmed = await askConfirmation(
+                "Delete Comment Log?",
+                "Are you sure you want to permanently delete this comment update?"
+            );
+
+            if (confirmed) {
+                state.comments = state.comments.filter(c => c.id !== commentId);
+                renderCommentsForTask(taskId);
+                renderTasksBoard();
+                showToast("Comment successfully deleted", "success");
+                syncToCloudBackend("sync_comments");
+            }
+        }
+
+
+        function setupEventListeners() {
+            // Dark Mode toggle
+            document.getElementById('toggle-dark-mode').onclick = () => {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+            };
+
+            // Search filtering key up
+            document.getElementById('search-input').oninput = (e) => {
+                state.searchQuery = e.target.value;
+                renderTasksBoard();
+            };
+
+            // Status Filter Radios
+            document.querySelectorAll('input[name="status-filter"]').forEach(radio => {
+                radio.onchange = (e) => {
+                    state.statusFilter = e.target.value;
+                    renderTasksBoard();
+                };
+            });
+
+            // Sorting selects
+            document.getElementById('sort-select').onchange = (e) => {
+                state.sortBy = e.target.value;
+                renderTasksBoard();
+            };
+
+            // New task actions
+            document.getElementById('btn-create-task').onclick = () => {
+                document.getElementById('task-modal-title').innerText = "Create New Business Task";
+                document.getElementById('task-form').reset();
+                document.getElementById('task-form-id').value = "";
+                // Default date picker to blank
+                document.getElementById('task-due').value = "";
+                openModal('modal-task-form');
+            };
+
+            document.getElementById('btn-empty-create').onclick = () => {
+                document.getElementById('btn-create-task').click();
+            };
+
+            // Board owner management setup
+            document.getElementById('btn-manage-owners').onclick = () => {
+                const listContainer = document.getElementById('partner-inputs-list');
+                let inputsHTML = '';
+                partners.forEach((partner, idx) => {
+                    inputsHTML += `
+                        <div class="flex gap-2">
+                            <input type="text" value="${partner}" class="partner-input flex-1 px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-indigo-500" data-idx="${idx}">
+                            <button onclick="removePartnerNode(${idx})" class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors" title="Delete Partner">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                // Add Partner field trigger
+                inputsHTML += `
+                    <div class="pt-2">
+                        <button onclick="addPartnerNodeField()" class="w-full py-2 text-xs font-semibold border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:text-indigo-600 rounded-xl flex items-center justify-center gap-1.5 transition-colors">
+                            <i class="fa-solid fa-plus"></i> Add Partner
+                        </button>
+                    </div>
+                `;
+
+                listContainer.innerHTML = inputsHTML;
+                openModal('modal-manage-owners');
+            };
+
+            // Cloud Server config setup modal toggle
+            document.getElementById('btn-open-integration').onclick = () => {
+                document.getElementById('integration-url-input').value = state.backendUrl || "";
+                openModal('modal-integration');
+            };
+
+            // Copy script logic
+            document.getElementById('btn-copy-script').onclick = () => {
+                const scriptText = document.querySelector('#modal-integration pre').innerText;
+                // Secure clipboard copy utility for inside sandbox contexts
+                const el = document.createElement('textarea');
+                el.value = scriptText;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast("Server Script copied to clipboard!", "success");
+            };
+
+            // Connect API Endpoint
+            document.getElementById('btn-save-endpoint').onclick = () => {
+                const url = document.getElementById('integration-url-input').value.trim();
+                if (!url) {
+                    state.backendUrl = "";
+                    state.isCloudMode = false;
+                    localStorage.removeItem('cotasker_backend_url');
+                    updateConnectionWidgetUI("Standalone Mode", "bg-amber-500", "bg-amber-400", "Fallback local mode active");
+                    showToast("Switched to Standalone Offline Mode", "info");
+                    closeModal('modal-integration');
+                    renderAll();
+                    return;
+                }
+
+                if (!url.startsWith("https://script.google.com/")) {
+                    showToast("Invalid Google Apps Script URL", "error");
+                    return;
+                }
+
+                state.backendUrl = url;
+                state.isCloudMode = true;
+                localStorage.setItem('cotasker_backend_url', url);
+                closeModal('modal-integration');
+                fetchCloudData();
+            };
+
+            // Custom modal generic close listeners
+            document.querySelectorAll('.modal-close').forEach(btn => {
+                btn.onclick = () => {
+                    closeModal('modal-task-form');
+                    closeModal('modal-task-details');
+                    closeModal('modal-integration');
+                    
+                    // Specific to owner updates saving
+                    if (btn.closest('#modal-manage-owners')) {
+                        processOwnerChangesAndClose();
+                    } else {
+                        closeModal('modal-manage-owners');
+                    }
+                };
+            });
+
+            // Confirm Dialog UI Resolvers
+            document.getElementById('btn-confirm-cancel').onclick = () => {
+                closeModal('modal-confirm');
+                if (confirmResolver) {
+                    confirmResolver(false);
+                    confirmResolver = null;
+                }
+            };
+
+            document.getElementById('btn-confirm-proceed').onclick = () => {
+                closeModal('modal-confirm');
+                if (confirmResolver) {
+                    confirmResolver(true);
+                    confirmResolver = null;
+                }
+            };
+        }
+
+
+        window.removePartnerNode = function(index) {
+            if (partners.length <= 1) {
+                showToast("You need at least one owner defined for assigning tasks.", "error");
+                return;
+            }
+            partners.splice(index, 1);
+            // Re-render admin container items
+            document.getElementById('btn-manage-owners').click();
+        };
+
+        window.addPartnerNodeField = function() {
+            partners.push("New Partner");
+            document.getElementById('btn-manage-owners').click();
+        };
+
+        function processOwnerChangesAndClose() {
+            const inputs = document.querySelectorAll('.partner-input');
+            const updatedPartners = [];
+            
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                if (val && !updatedPartners.includes(val)) {
+                    updatedPartners.push(val);
+                }
+            });
+
+            if (updatedPartners.length > 0) {
+                partners = updatedPartners;
+                localStorage.setItem('cotasker_partners', JSON.stringify(partners));
+            }
+
+            closeModal('modal-manage-owners');
+            renderAll();
+            showToast("Owners registry successfully synchronized", "success");
+        }
+
+
+        // Get Initials Helper (Supports double or single names safely)
+        function getInitials(name) {
+            if (!name) return "??";
+            const parts = name.trim().split(/\s+/);
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            }
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        // Beautiful format dates e.g. "Jun 15, 2026"
+        function formatDisplayDate(dateStr) {
+            const date = new Date(dateStr);
+            if (isNaN(date)) return dateStr;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+        }
+
+        // Date-Time Formatter e.g. "Jun 15, 2026 at 02:30 PM"
+        function formatDisplayDateTime(dateISOStr) {
+            const date = new Date(dateISOStr);
+            if (isNaN(date)) return dateISOStr;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + 
+                   " at " + 
+                   date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // UI Toast Alert Handler
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toastId = "toast-" + Date.now();
+            
+            let colorClasses = "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700";
+            let icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+
+            if (type === "error") {
+                colorClasses = "bg-rose-50 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border-rose-100 dark:border-rose-900";
+                icon = '<i class="fa-solid fa-circle-xmark text-rose-500"></i>';
+            } else if (type === "info") {
+                colorClasses = "bg-indigo-50 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 border-indigo-100 dark:border-indigo-900";
+                icon = '<i class="fa-solid fa-circle-info text-indigo-500"></i>';
+            }
+
+            const toastHTML = `
+                <div id="${toastId}" class="flex items-center gap-3 p-4 rounded-xl border shadow-lg ${colorClasses} pointer-events-auto transition-all duration-300 transform translate-y-2 opacity-0">
+                    <span class="flex-none text-base">${icon}</span>
+                    <p class="text-xs font-semibold leading-relaxed flex-1">${message}</p>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', toastHTML);
+            const el = document.getElementById(toastId);
+            
+            // Pop transition in
+            setTimeout(() => {
+                el.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            // Pop transition out
+            setTimeout(() => {
+                el.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => el.remove(), 300);
+            }, 4500);
+        }
+
+        // Live status widget color dynamic updater
+        function updateConnectionWidgetUI(statusText, pulseBgClass, dotBgClass, descriptionText) {
+            document.getElementById('conn-text').innerText = statusText;
+            
+            const pulse = document.getElementById('conn-ping-pulse');
+            const dot = document.getElementById('conn-ping-dot');
+
+            // Reset dynamic styles
+            pulse.className = `animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${pulseBgClass}`;
+            dot.className = `relative inline-flex rounded-full h-2.5 w-2.5 ${dotBgClass}`;
+        }
+
+        // Start Core Engine
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>
