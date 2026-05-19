@@ -50,6 +50,14 @@
                 margin-top: auto !important;
             }
         }
+
+        /* Customize calendar picker indicator icon to match Co-Tasker Pro theme */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><rect width='18' height='18' x='3' y='4' rx='2' ry='2'/><path d='M16 2v4'/><path d='M8 2v4'/><path d='M3 10h18'/></svg>");
+            cursor: pointer;
+            filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.4));
+            padding: 4px;
+        }
     </style>
 </head>
 <body class="bg-[#0b0f19] text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
@@ -222,9 +230,23 @@
                                 {{ task.priority }}
                             </span>
                             
-                            <!-- Toggle Completion Button (Enlarged and optimized for mobile tap) -->
-                            <button @click="toggleStatus(task)" :disabled="loading" :class="task.status === 'Completed' ? 'bg-emerald-500 text-slate-950 border-emerald-500' : 'border-slate-700 hover:border-indigo-500 text-transparent'" class="w-6.5 h-6.5 rounded-lg border flex items-center justify-center transition-all disabled:opacity-50 min-h-[30px] min-w-[30px]">
-                                <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+                            <!-- Toggle Completion Checkbox Button (Highly meaningful, animated, optimized for touch) -->
+                            <button @click="toggleStatus(task)" 
+                                    :disabled="loading" 
+                                    class="group/btn relative w-10 h-10 -mr-2 flex items-center justify-center rounded-xl transition-all duration-200 disabled:opacity-50 select-none focus:outline-none"
+                                    :title="task.status === 'Completed' ? 'Reopen Task' : 'Complete Task'">
+                                <!-- Completed State -->
+                                <div v-if="task.status === 'Completed'" class="flex items-center justify-center w-6.5 h-6.5 rounded-full bg-emerald-500/20 border border-emerald-500/80 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.25)] transition-all transform scale-105 active:scale-95">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <!-- Incomplete State (Todo / In Progress) -->
+                                <div v-else class="flex items-center justify-center w-6.5 h-6.5 rounded-full border border-slate-700 group-hover/btn:border-indigo-500/80 group-hover/btn:bg-indigo-500/10 text-slate-500 group-hover/btn:text-indigo-400 transition-all active:scale-90">
+                                    <svg class="w-3.5 h-3.5 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
                             </button>
                         </div>
 
@@ -340,6 +362,10 @@
                             <select v-model="taskForm.owner" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
                                 <option v-for="col in collaborators" :key="col.id" :value="col.name">{{ col.name }}</option>
                                 <option value="Unassigned">Unassigned</option>
+                                <!-- Fallback option if owner is not in directory (prevents empty dropdowns) -->
+                                <option v-if="taskForm.owner && taskForm.owner !== 'Unassigned' && !collaborators.some(c => c.name === taskForm.owner)" :value="taskForm.owner">
+                                    {{ taskForm.owner }} (Not in Directory)
+                                </option>
                             </select>
                         </div>
 
@@ -355,10 +381,10 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Target Date -->
+                        <!-- Target Date (Enhanced with interactive custom date picker activation) -->
                         <div>
                             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Target Due Date</label>
-                            <input v-model="taskForm.dueDate" type="date" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
+                            <input v-model="taskForm.dueDate" type="date" onclick="try { this.showPicker(); } catch(e) {}" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px] cursor-pointer" placeholder="Select target due date...">
                         </div>
 
                         <!-- Status Option -->
@@ -644,7 +670,7 @@
         <div v-if="isColDeleteConfirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center px-4">
             <div @click="isColDeleteConfirmOpen = false" class="absolute inset-0 bg-[#07090e]/95 backdrop-blur-sm"></div>
             
-            <div class="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
+            <div class="relative bg-slate-900 border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
                 <div class="w-12 h-12 rounded-full bg-red-950/40 border border-red-500/40 flex items-center justify-center mx-auto mb-4 text-red-400">
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                 </div>
@@ -666,10 +692,10 @@
                 </div>
 
                 <div class="flex items-center justify-center space-x-3">
-                    <button @click="isColDeleteConfirmOpen = false" class="w-24 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
+                    <button @click="isColDeleteConfirmOpen = false" class="w-24 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition min-h-[44px] flex-1 items-center justify-center">
                         Cancel
                     </button>
-                    <button @click="executeDeleteCollaborator" class="w-24 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
+                    <button @click="executeDeleteCollaborator" class="w-24 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition min-h-[44px] flex-1 items-center justify-center">
                         Confirm
                     </button>
                 </div>
@@ -691,10 +717,10 @@
                 </p>
 
                 <div class="flex items-center justify-center space-x-3">
-                    <button @click="cancelDelete" class="w-24 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
+                    <button @click="cancelDelete" class="w-24 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition min-h-[44px] flex-1 items-center justify-center">
                         Cancel
                     </button>
-                    <button @click="executeDelete" :disabled="loading" class="w-24 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50 min-h-[44px] flex items-center justify-center">
+                    <button @click="executeDelete" :disabled="loading" class="w-24 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50 min-h-[44px] flex-1 items-center justify-center">
                         {{ loading ? '...' : 'Delete' }}
                     </button>
                 </div>
@@ -808,6 +834,86 @@
                     });
                 };
 
+                // =========================================================================
+                // DATA NORMALIZATION HELPER (FIX FOR BLANK EDIT dropdown values)
+                // =========================================================================
+                const normalizeTaskObj = (task) => {
+                    if (!task) return null;
+                    const normalized = {};
+                    
+                    // Lowercase all keys to bypass casing consistency variations (Priority vs priority)
+                    Object.keys(task).forEach(key => {
+                        normalized[key.toLowerCase()] = task[key];
+                    });
+
+                    const cleanTask = {
+                        id: normalized.id || task.id || null,
+                        title: normalized.title || task.title || '',
+                        description: normalized.description || task.description || '',
+                        owner: normalized.owner || task.owner || 'Unassigned',
+                        priority: normalized.priority || task.priority || 'Medium',
+                        status: normalized.status || task.status || 'Todo',
+                        dueDate: normalized.duedate || normalized.dueDate || task.dueDate || '',
+                        createdAt: normalized.createdat || normalized.createdAt || task.createdAt || new Date().toISOString(),
+                        updatedAt: normalized.updatedat || normalized.updatedAt || task.updatedAt || new Date().toISOString()
+                    };
+
+                    // Standardize Owner to match Collaborators casing (case-insensitive check to prevent blank selection boxes)
+                    if (cleanTask.owner) {
+                        const cleanedOwner = String(cleanTask.owner).trim();
+                        if (cleanedOwner.toLowerCase() === 'unassigned' || cleanedOwner === '') {
+                            cleanTask.owner = 'Unassigned';
+                        } else {
+                            const matchedCol = collaborators.value.find(c => c.name.trim().toLowerCase() === cleanedOwner.toLowerCase());
+                            if (matchedCol) {
+                                cleanTask.owner = matchedCol.name; // Keep exact casing from active directory
+                            } else {
+                                cleanTask.owner = cleanedOwner; // Keep spelling for fallback selector compatibility
+                            }
+                        }
+                    } else {
+                        cleanTask.owner = 'Unassigned';
+                    }
+
+                    // Standardize Priority Value capitalization (e.g., "high" -> "High")
+                    if (cleanTask.priority) {
+                        let p = String(cleanTask.priority).trim();
+                        if (p) {
+                            p = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+                        }
+                        if (['High', 'Medium', 'Low'].includes(p)) {
+                            cleanTask.priority = p;
+                        } else {
+                            cleanTask.priority = 'Medium';
+                        }
+                    } else {
+                        cleanTask.priority = 'Medium';
+                    }
+
+                    // Standardize Status Value strings (e.g., "in progress" -> "In Progress", "done" -> "Completed")
+                    if (cleanTask.status) {
+                        let s = String(cleanTask.status).trim().toLowerCase();
+                        if (s === 'todo') {
+                            cleanTask.status = 'Todo';
+                        } else if (s === 'in progress' || s === 'active' || s === 'inprogress') {
+                            cleanTask.status = 'In Progress';
+                        } else if (s === 'completed' || s === 'done' || s === 'complete') {
+                            cleanTask.status = 'Completed';
+                        } else {
+                            cleanTask.status = 'Todo';
+                        }
+                    } else {
+                        cleanTask.status = 'Todo';
+                    }
+
+                    return cleanTask;
+                };
+
+                const normalizeTasksArray = (tasksArray) => {
+                    if (!Array.isArray(tasksArray)) return [];
+                    return tasksArray.map(t => normalizeTaskObj(t));
+                };
+
                 // Utilities
                 const formatDate = (dateStr) => {
                     if (!dateStr) return '';
@@ -898,7 +1004,7 @@
                         const res = await response.json();
                         
                         if (res.status === 'success') {
-                            tasks.value = res.tasks || [];
+                            tasks.value = normalizeTasksArray(res.tasks || []);
                             comments.value = res.comments || [];
                             saveLocalCache();
                             pushToast("Synced successfully with Google Sheets!");
@@ -931,13 +1037,13 @@
                         
                         const res = await response.json();
                         if (res.status === 'success') {
-                            tasks.value = res.tasks || [];
+                            tasks.value = normalizeTasksArray(res.tasks || []);
                             comments.value = res.comments || [];
                             saveLocalCache();
                             
                             if (activeDetailTask.value) {
                                 const current = tasks.value.find(t => t.id === activeDetailTask.value.id);
-                                if (current) activeDetailTask.value = current;
+                                if (current) activeDetailTask.value = normalizeTaskObj(current);
                             }
                             pushToast("Database successfully updated!");
                         } else {
@@ -958,14 +1064,15 @@
                     const { action, data } = payload;
                     
                     if (action === 'saveTask') {
-                        if (data.id) {
-                            const index = tasks.value.findIndex(t => t.id === data.id);
+                        const normalizedTask = normalizeTaskObj(data);
+                        if (normalizedTask.id) {
+                            const index = tasks.value.findIndex(t => t.id === normalizedTask.id);
                             if (index !== -1) {
-                                tasks.value[index] = { ...tasks.value[index], ...data, updatedAt: new Date().toISOString() };
+                                tasks.value[index] = { ...tasks.value[index], ...normalizedTask, updatedAt: new Date().toISOString() };
                             }
                         } else {
                             const newTask = {
-                                ...data,
+                                ...normalizedTask,
                                 id: 'lcl_' + Date.now(),
                                 createdAt: new Date().toISOString(),
                                 updatedAt: new Date().toISOString()
@@ -998,12 +1105,12 @@
                     const cachedT = localStorage.getItem('gtask_tasks');
                     const cachedC = localStorage.getItem('gtask_comments');
                     if (cachedT) {
-                        tasks.value = JSON.parse(cachedT);
+                        tasks.value = normalizeTasksArray(JSON.parse(cachedT));
                         comments.value = cachedC ? JSON.parse(cachedC) : [];
                     } else {
                         // Bootstrap mock data
                         const initialOwner = collaborators.value[0]?.name || 'Alex';
-                        tasks.value = [
+                        tasks.value = normalizeTasksArray([
                             {
                                 id: 'mock_1',
                                 title: 'Deploy Dashboard frontend to GitHub Pages',
@@ -1014,7 +1121,7 @@
                                 dueDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
                                 createdAt: new Date().toISOString()
                             }
-                        ];
+                        ]);
                         comments.value = [
                             {
                                 id: 'mc_1',
@@ -1191,7 +1298,8 @@
                 };
 
                 const openEditModal = (task) => {
-                    taskForm.value = { ...task };
+                    // Populate Form with Normalizer protection to guarantee dropdown alignment
+                    taskForm.value = normalizeTaskObj(task);
                     isDetailModalOpen.value = false;
                     isCreateModalOpen.value = true;
                 };
@@ -1212,7 +1320,7 @@
                 };
 
                 const openDetailModal = (task) => {
-                    activeDetailTask.value = task;
+                    activeDetailTask.value = normalizeTaskObj(task);
                     newComment.value.author = collaborators.value[0]?.name || 'Unassigned';
                     newComment.value.text = '';
                     isDetailModalOpen.value = true;
@@ -1308,7 +1416,7 @@
                         try {
                             const imported = JSON.parse(e.target.result);
                             if (imported.tasks) {
-                                tasks.value = imported.tasks;
+                                tasks.value = normalizeTasksArray(imported.tasks);
                                 comments.value = imported.comments || [];
                                 if (imported.collaborators) {
                                     collaborators.value = imported.collaborators;
