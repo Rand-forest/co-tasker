@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Co-Tasker Pro - Google Sheets Powered Workspace</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,8 +17,16 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         [v-cloak] { display: none; }
+        
+        /* Smooth Inertial Touch Scrolling for carousels and filters on iOS/Android */
+        .scroll-touch-momentum {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
@@ -26,14 +34,27 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        
         .glow-indigo {
             box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Mobile specific bottom sheet styling */
+        @media (max-width: 640px) {
+            .mobile-bottom-sheet {
+                border-bottom-left-radius: 0px !important;
+                border-bottom-right-radius: 0px !important;
+                max-height: 92vh !important;
+                width: 100% !important;
+                margin-bottom: 0px !important;
+                margin-top: auto !important;
+            }
         }
     </style>
 </head>
 <body class="bg-[#0b0f19] text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
 
-    <div id="app" class="pb-16" v-cloak>
+    <div id="app" class="pb-24 sm:pb-16" v-cloak>
         
         <!-- HEADER / NAVIGATION -->
         <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
@@ -45,25 +66,25 @@
                         <i data-lucide="check-square" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Co-Tasker Pro</h1>
-                        <p class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">Google Sheets Connected</p>
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Co-Tasker Pro</h1>
+                        <p class="text-[9px] sm:text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">Google Sheets Connected</p>
                     </div>
                 </div>
 
                 <!-- Sync Connection Status Badge -->
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2 sm:space-x-3">
                     <!-- Manual Sync Pull Trigger -->
-                    <button v-if="sheetUrl" @click="fetchTasks" :disabled="loading" class="p-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 rounded-lg text-slate-400 hover:text-white transition disabled:opacity-50 flex items-center justify-center" title="Force Sync Refresh">
-                        <i data-lucide="rotate-cw" :class="{'animate-spin text-indigo-400': loading}" class="w-4 h-4"></i>
+                    <button v-if="sheetUrl" @click="fetchTasks" :disabled="loading" class="p-2.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 rounded-xl text-slate-400 hover:text-white transition disabled:opacity-50 flex items-center justify-center min-w-[40px] min-h-[40px]" title="Force Sync Refresh">
+                        <i data-lucide="rotate-cw" :class="{'animate-spin text-indigo-400': loading}" class="w-4.5 h-4.5"></i>
                     </button>
 
-                    <div @click="openSettingsModal" class="cursor-pointer group flex items-center space-x-2 bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-700/50 hover:border-slate-600 transition-all">
-                        <span class="flex h-2.5 w-2.5 relative">
-                            <span :class="sheetUrl ? 'bg-emerald-500' : 'bg-amber-500'" class="relative inline-flex rounded-full h-2.5 w-2.5"></span>
+                    <div @click="openSettingsModal" class="cursor-pointer group flex items-center space-x-1.5 sm:space-x-2 bg-slate-800/80 px-3 py-2 sm:py-1.5 rounded-full border border-slate-700/50 hover:border-slate-600 transition-all select-none min-h-[40px]">
+                        <span class="flex h-2 w-2 sm:h-2.5 sm:w-2.5 relative">
+                            <span :class="sheetUrl ? 'bg-emerald-500' : 'bg-amber-500'" class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5"></span>
                             <span v-if="loading" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                         </span>
-                        <span class="text-xs font-semibold" :class="sheetUrl ? 'text-emerald-400' : 'text-amber-400'">
-                            {{ sheetUrl ? 'Sheets Backend Active' : 'Offline Mode (Local)' }}
+                        <span class="text-[11px] sm:text-xs font-semibold" :class="sheetUrl ? 'text-emerald-400' : 'text-amber-400'">
+                            {{ sheetUrl ? 'Sheets' : 'Offline' }}
                         </span>
                         <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400 group-hover:rotate-45 transition-transform"></i>
                     </div>
@@ -73,115 +94,114 @@
         </header>
 
         <!-- MAIN CONTAINER -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">
             
-            <!-- CO-PARTNER OVERVIEW & QUICK PANEL -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- COLLABORATOR OVERVIEW & QUICK PANEL -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 
-                <!-- Profile & Collaborator Metrics -->
-                <div class="lg:col-span-2 bg-gradient-to-r from-slate-900/90 to-slate-800/40 border border-slate-800/80 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div class="flex items-center space-x-4">
-                        <div class="flex -space-x-3">
-                            <div class="w-12 h-12 rounded-full border-2 border-slate-900 bg-gradient-to-tr from-indigo-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
-                                {{ partners.partner1.charAt(0) }}
+                <!-- Profile & Collaborator Directory Card -->
+                <div class="lg:col-span-2 bg-gradient-to-r from-slate-900/90 to-slate-800/40 border border-slate-800/80 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6">
+                    <div class="flex items-center space-x-4 w-full sm:w-auto">
+                        <!-- Dynamic Collapsed Avatar Stack -->
+                        <div class="flex -space-x-2.5 overflow-hidden flex-shrink-0">
+                            <div v-for="col in collaborators.slice(0, 5)" :key="col.id" :class="col.color" class="w-10 h-10 rounded-full border-2 border-slate-900 flex items-center justify-center font-bold text-white shadow-md select-none" :title="col.name">
+                                {{ col.name.charAt(0) }}
                             </div>
-                            <div class="w-12 h-12 rounded-full border-2 border-slate-900 bg-gradient-to-tr from-violet-500 to-fuchsia-500 flex items-center justify-center font-bold text-white shadow-md">
-                                {{ partners.partner2.charAt(0) }}
+                            <div v-if="collaborators.length > 5" class="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center font-bold text-slate-400 text-xs shadow-md">
+                                +{{ collaborators.length - 5 }}
                             </div>
                         </div>
-                        <div>
+                        <div class="min-w-0 flex-1">
                             <div class="flex items-center space-x-2">
-                                <h2 class="text-lg font-bold text-slate-100">Partnership Registry</h2>
-                                <button @click="openSettingsModal" class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition">
-                                    <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                <h2 class="text-base sm:text-lg font-bold text-slate-100 truncate">Workspace Directory</h2>
+                                <button @click="openCollaboratorsModal" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition flex-shrink-0" title="Manage Collaborators">
+                                    <i data-lucide="users" class="w-4 h-4"></i>
                                 </button>
                             </div>
-                            <p class="text-sm text-slate-400">
-                                Collaborators: <span class="text-indigo-400 font-medium">{{ partners.partner1 }}</span> & 
-                                <span class="text-violet-400 font-medium">{{ partners.partner2 }}</span>
+                            <p class="text-xs text-slate-400 leading-normal truncate">
+                                Members: <span class="text-indigo-400 font-semibold">{{ collaborators.map(c => c.name).join(', ') }}</span>
                             </p>
                         </div>
                     </div>
 
-                    <!-- Workload Balance Stats -->
-                    <div class="flex items-center space-x-6 bg-slate-900/50 px-6 py-3 rounded-xl border border-slate-800">
-                        <div class="text-center">
-                            <p class="text-xs text-slate-400 font-medium">{{ partners.partner1 }}</p>
-                            <p class="text-lg font-bold text-indigo-400">{{ getOwnerTaskCount(partners.partner1) }} tasks</p>
-                        </div>
-                        <div class="h-8 w-px bg-slate-800"></div>
-                        <div class="text-center">
-                            <p class="text-xs text-slate-400 font-medium">{{ partners.partner2 }}</p>
-                            <p class="text-lg font-bold text-violet-400">{{ getOwnerTaskCount(partners.partner2) }} tasks</p>
+                    <!-- Workload Balance Scrollable Tracker -->
+                    <div class="flex items-center space-x-4 overflow-x-auto scrollbar-hide py-1 bg-slate-900/50 px-4 py-2.5 rounded-xl border border-slate-800 max-w-full w-full sm:w-auto scroll-touch-momentum">
+                        <div v-for="(col, index) in collaborators" :key="col.id" class="flex items-center space-x-4 flex-shrink-0">
+                            <div class="text-center">
+                                <p class="text-[11px] text-slate-400 font-medium">{{ col.name }}</p>
+                                <p class="text-xs font-bold text-indigo-400">{{ getOwnerTaskCount(col.name) }} tasks</p>
+                            </div>
+                            <div v-if="index < collaborators.length - 1" class="h-6 w-px bg-slate-800/80"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Quick Action Hub -->
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between">
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Work Deck Actions</h3>
                         <span v-if="loading" class="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded font-semibold animate-pulse">Syncing...</span>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <button @click="openCreateModal" class="flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-500 transition py-2.5 px-4 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-600/10">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        <button @click="openCreateModal" class="flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-500 transition py-3 px-4 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-600/10 min-h-[44px]">
+                            <i data-lucide="plus" class="w-4.5 h-4.5"></i>
                             <span>Add Task</span>
                         </button>
-                        <button @click="openSettingsModal" class="flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 transition py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-700/60 text-slate-200">
-                            <i data-lucide="database" class="w-4 h-4"></i>
-                            <span>Configure</span>
+                        <button @click="openCollaboratorsModal" class="flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 transition py-3 px-4 rounded-xl font-semibold text-sm border border-slate-700/60 text-slate-200 min-h-[44px]">
+                            <i data-lucide="users" class="w-4.5 h-4.5"></i>
+                            <span>Members</span>
                         </button>
                     </div>
                 </div>
             </div>
 
             <!-- FILTERS, SEARCH AND DISPLAY BAR -->
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 mb-6 sm:mb-8 flex flex-col gap-4 items-center justify-between md:flex-row">
                 
                 <!-- Live Search -->
                 <div class="relative w-full md:w-80">
-                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input v-model="searchQuery" type="text" placeholder="Filter tasks by text..." class="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-200 text-sm transition">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-500"></i>
+                    <input v-model="searchQuery" type="text" placeholder="Filter tasks by text..." class="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-200 text-sm transition min-h-[44px]">
                 </div>
 
                 <!-- Dynamic Option Filters -->
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                     
-                    <!-- Owner Filter -->
-                    <div class="flex items-center space-x-1.5 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
-                        <span class="text-xs text-slate-500 font-medium">Owner:</span>
-                        <select v-model="filterOwner" class="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-semibold">
-                            <option value="All">All Owners</option>
-                            <option :value="partners.partner1">{{ partners.partner1 }}</option>
-                            <option :value="partners.partner2">{{ partners.partner2 }}</option>
-                            <option value="Unassigned">Unassigned</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+                        <!-- Owner Filter -->
+                        <div class="flex items-center space-x-1.5 bg-slate-900/80 border border-slate-800 px-3 py-2 rounded-xl min-h-[44px]">
+                            <span class="text-xs text-slate-500 font-medium">Owner:</span>
+                            <select v-model="filterOwner" class="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-semibold flex-1">
+                                <option value="All">All Owners</option>
+                                <option v-for="col in collaborators" :key="col.id" :value="col.name">{{ col.name }}</option>
+                                <option value="Unassigned">Unassigned</option>
+                            </select>
+                        </div>
+
+                        <!-- Priority Filter -->
+                        <div class="flex items-center space-x-1.5 bg-slate-900/80 border border-slate-800 px-3 py-2 rounded-xl min-h-[44px]">
+                            <span class="text-xs text-slate-500 font-medium">Priority:</span>
+                            <select v-model="filterPriority" class="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-semibold flex-1">
+                                <option value="All">All Priorities</option>
+                                <option value="High">🔴 High</option>
+                                <option value="Medium">🟡 Medium</option>
+                                <option value="Low">🟢 Low</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- Priority Filter -->
-                    <div class="flex items-center space-x-1.5 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
-                        <span class="text-xs text-slate-500 font-medium">Priority:</span>
-                        <select v-model="filterPriority" class="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer font-semibold">
-                            <option value="All">All Priorities</option>
-                            <option value="High">🔴 High</option>
-                            <option value="Medium">🟡 Medium</option>
-                            <option value="Low">🟢 Low</option>
-                        </select>
-                    </div>
-
-                    <!-- Status Tabs -->
-                    <div class="flex bg-slate-900/80 p-1 border border-slate-800 rounded-xl">
-                        <button @click="filterStatus = 'All'" :class="filterStatus === 'All' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="px-3 py-1 rounded-lg text-xs font-semibold transition">
+                    <!-- Status Tabs (Swipeable/Horizontal Scrollable on Mobile) -->
+                    <div class="flex bg-slate-900/80 p-1 border border-slate-800 rounded-xl overflow-x-auto scrollbar-hide scroll-touch-momentum flex-nowrap w-full sm:w-auto min-h-[44px] items-center">
+                        <button @click="filterStatus = 'All'" :class="filterStatus === 'All' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 min-h-[34px] flex items-center justify-center">
                             All
                         </button>
-                        <button @click="filterStatus = 'Todo'" :class="filterStatus === 'Todo' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="px-3 py-1 rounded-lg text-xs font-semibold transition">
+                        <button @click="filterStatus = 'Todo'" :class="filterStatus === 'Todo' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 min-h-[34px] flex items-center justify-center">
                             Todo
                         </button>
-                        <button @click="filterStatus = 'In Progress'" :class="filterStatus === 'In Progress' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="px-3 py-1 rounded-lg text-xs font-semibold transition">
+                        <button @click="filterStatus = 'In Progress'" :class="filterStatus === 'In Progress' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 min-h-[34px] flex items-center justify-center">
                             Active
                         </button>
-                        <button @click="filterStatus = 'Completed'" :class="filterStatus === 'Completed' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'" class="px-3 py-1 rounded-lg text-xs font-semibold transition">
+                        <button @click="filterStatus = 'Completed'" :class="filterStatus === 'Completed' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 min-h-[34px] flex items-center justify-center">
                             Done
                         </button>
                     </div>
@@ -190,7 +210,7 @@
             </div>
 
             <!-- TASK CARDS LISTING GRID -->
-            <div v-if="filteredTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-if="filteredTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 
                 <div v-for="task in filteredTasks" :key="task.id" 
                      class="group relative bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-indigo-500/40 rounded-2xl p-5 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between glow-indigo">
@@ -202,14 +222,14 @@
                                 {{ task.priority }}
                             </span>
                             
-                            <!-- Toggle Completion Button -->
-                            <button @click="toggleStatus(task)" :disabled="loading" :class="task.status === 'Completed' ? 'bg-emerald-500 text-slate-950 border-emerald-500' : 'border-slate-700 hover:border-indigo-500 text-transparent'" class="w-5 h-5 rounded-md border flex items-center justify-center transition-all disabled:opacity-50">
-                                <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
+                            <!-- Toggle Completion Button (Enlarged and optimized for mobile tap) -->
+                            <button @click="toggleStatus(task)" :disabled="loading" :class="task.status === 'Completed' ? 'bg-emerald-500 text-slate-950 border-emerald-500' : 'border-slate-700 hover:border-indigo-500 text-transparent'" class="w-6.5 h-6.5 rounded-lg border flex items-center justify-center transition-all disabled:opacity-50 min-h-[30px] min-w-[30px]">
+                                <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
                             </button>
                         </div>
 
                         <!-- Card Body Elements -->
-                        <h3 :class="{'line-through text-slate-500': task.status === 'Completed'}" class="text-base font-bold text-slate-100 mb-1.5 group-hover:text-indigo-400 transition-colors cursor-pointer" @click="openDetailModal(task)">
+                        <h3 :class="{'line-through text-slate-500': task.status === 'Completed'}" class="text-base font-bold text-slate-100 mb-2 group-hover:text-indigo-400 transition-colors cursor-pointer" @click="openDetailModal(task)">
                             {{ task.title }}
                         </h3>
                         <p class="text-xs text-slate-400 line-clamp-3 mb-4">
@@ -222,38 +242,38 @@
                         <div class="flex items-center justify-between text-xs text-slate-400">
                             <!-- Assigned Owner Profile Icon -->
                             <div class="flex items-center space-x-2">
-                                <div :class="task.owner === partners.partner1 ? 'bg-indigo-600 text-indigo-100' : 'bg-violet-600 text-violet-100'" class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold">
+                                <div :class="getCollaboratorColor(task.owner)" class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] text-white font-bold select-none">
                                     {{ task.owner ? task.owner.charAt(0) : '?' }}
                                 </div>
                                 <span class="font-semibold text-slate-300 text-[11px]">{{ task.owner || 'Unassigned' }}</span>
                             </div>
 
-                            <!-- Comment & Edit Utilities -->
-                            <div class="flex items-center space-x-3.5">
-                                <div class="flex items-center space-x-1 hover:text-indigo-400 transition cursor-pointer" @click="openDetailModal(task)">
-                                    <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                            <!-- Comment & Edit Utilities (Enlarged tap targets for fingers) -->
+                            <div class="flex items-center space-x-1 sm:space-x-2">
+                                <div class="p-2 hover:text-indigo-400 transition cursor-pointer flex items-center space-x-1 min-h-[40px]" @click="openDetailModal(task)">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i>
                                     <span class="font-bold text-[11px]">{{ getCommentCount(task.id) }}</span>
                                 </div>
 
-                                <button @click="openEditModal(task)" :disabled="loading" class="p-1 hover:bg-slate-800 hover:text-slate-100 rounded transition disabled:opacity-50" title="Modify details">
-                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                <button @click="openEditModal(task)" :disabled="loading" class="p-2 hover:bg-slate-800 hover:text-slate-100 rounded-lg transition disabled:opacity-50 min-h-[40px] min-w-[40px] flex items-center justify-center" title="Modify details">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
                                 </button>
                                 
-                                <button @click="confirmDelete(task.id)" :disabled="loading" class="p-1 hover:bg-red-950/40 hover:text-red-400 rounded transition disabled:opacity-50" title="Delete Card">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                <button @click="confirmDelete(task.id)" :disabled="loading" class="p-2 hover:bg-red-950/40 hover:text-red-400 rounded-lg transition disabled:opacity-50 min-h-[40px] min-w-[40px] flex items-center justify-center" title="Delete Card">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Target Deadlines & Status Badge -->
-                        <div class="mt-3.5 flex items-center justify-between text-[11px]">
+                        <div class="mt-3 flex items-center justify-between text-[11px]">
                             <span class="text-slate-500">
                                 <span v-if="task.dueDate" class="flex items-center space-x-1">
-                                    <i data-lucide="calendar" class="w-3 h-3 text-slate-600"></i>
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-600"></i>
                                     <span>Due: {{ formatDate(task.dueDate) }}</span>
                                 </span>
                             </span>
-                            <span :class="getStatusBadgeClass(task.status)" class="font-bold rounded px-2 py-0.5 text-[10px]">
+                            <span :class="getStatusBadgeClass(task.status)" class="font-bold rounded px-2.5 py-1 text-[10px]">
                                 {{ task.status }}
                             </span>
                         </div>
@@ -264,17 +284,17 @@
             </div>
 
             <!-- EMPTY RESULTS PLACEHOLDER -->
-            <div v-else class="text-center py-20 bg-slate-900/20 border border-slate-800/65 rounded-2xl max-w-xl mx-auto">
-                <div class="w-16 h-16 rounded-full bg-slate-800/50 border border-slate-700 flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="folder-open" class="w-8 h-8 text-indigo-400"></i>
+            <div v-else class="text-center py-16 bg-slate-900/20 border border-slate-800/65 rounded-2xl max-w-xl mx-auto px-4">
+                <div class="w-14 h-14 rounded-full bg-slate-800/50 border border-slate-700 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="folder-open" class="w-7 h-7 text-indigo-400"></i>
                 </div>
-                <h3 class="text-lg font-bold text-slate-200">No matching items found</h3>
-                <p class="text-slate-400 text-sm mt-1 max-w-sm mx-auto">Your active search criteria or selection filters yielded 0 active tasks. Click reset or add a new milestone to start tracking!</p>
-                <div class="mt-6 flex justify-center space-x-3">
-                    <button @click="clearFilters" class="text-xs font-bold bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-xl transition">
+                <h3 class="text-base font-bold text-slate-200">No matching items found</h3>
+                <p class="text-slate-400 text-xs mt-1 max-w-sm mx-auto">Your active search criteria or selection filters yielded 0 active tasks. Click reset or add a new milestone to start tracking!</p>
+                <div class="mt-6 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3">
+                    <button @click="clearFilters" class="text-xs font-bold bg-slate-800 hover:bg-slate-700 px-4 py-3 sm:py-2 rounded-xl transition min-h-[44px]">
                         Clear Filters
                     </button>
-                    <button @click="openCreateModal" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 rounded-xl text-white transition">
+                    <button @click="openCreateModal" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 px-4 py-3 sm:py-2 rounded-xl text-white transition min-h-[44px]">
                         Add New Task
                     </button>
                 </div>
@@ -282,50 +302,51 @@
 
         </main>
 
-        <!-- ==================== DIALOGS & OVERLAYS ==================== -->
+        <!-- ==================== DIALOGS & OVERLAYS (OPTIMIZED MOBILE BOTTOM SHEETS) ==================== -->
 
         <!-- TASK CREATE & EDIT MODAL -->
-        <div v-if="isCreateModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div @click="closeCreateModal" class="absolute inset-0 bg-[#07090e]/80 backdrop-blur-sm"></div>
+        <div v-if="isCreateModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-0 sm:px-4">
+            <!-- Backdrop -->
+            <div @click="closeCreateModal" class="absolute inset-0 bg-[#07090e]/85 backdrop-blur-sm"></div>
             
-            <div class="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
-                    <h3 class="text-lg font-bold text-slate-100">
+            <div class="relative bg-slate-900 border-t sm:border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh] mobile-bottom-sheet animate-in fade-in slide-in-from-bottom-5 sm:zoom-in-95 duration-200 overflow-hidden">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800 flex-shrink-0">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-100">
                         {{ taskForm.id ? 'Modify Task Properties' : 'Create New Work Task' }}
                     </h3>
-                    <button @click="closeCreateModal" class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-slate-200 transition">
+                    <button @click="closeCreateModal" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition min-w-[40px] min-h-[40px] flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
-                <form @submit.prevent="submitTaskForm" class="space-y-4">
+                <!-- Form container with customized mobile scroll containment -->
+                <form @submit.prevent="submitTaskForm" class="space-y-4 py-4 overflow-y-auto flex-1 scrollbar-hide">
                     <!-- Title -->
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Task Label / Title <span class="text-red-500">*</span></label>
-                        <input v-model="taskForm.title" type="text" required placeholder="Build design mockup..." class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Task Label / Title <span class="text-red-500">*</span></label>
+                        <input v-model="taskForm.title" type="text" required placeholder="Build design mockup..." class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
                     </div>
 
                     <!-- Scope Description -->
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Scope Description</label>
-                        <textarea v-model="taskForm.description" rows="3" placeholder="Provide complete technical scope, dependencies or context..." class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition"></textarea>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Scope Description</label>
+                        <textarea v-model="taskForm.description" rows="3" placeholder="Provide complete technical scope, dependencies or context..." class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Owner Selection -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Assignee Name</label>
-                            <select v-model="taskForm.owner" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition">
-                                <option :value="partners.partner1">{{ partners.partner1 }}</option>
-                                <option :value="partners.partner2">{{ partners.partner2 }}</option>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Assignee Name</label>
+                            <select v-model="taskForm.owner" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
+                                <option v-for="col in collaborators" :key="col.id" :value="col.name">{{ col.name }}</option>
                                 <option value="Unassigned">Unassigned</option>
                             </select>
                         </div>
 
                         <!-- Priority Selection -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Priority Level</label>
-                            <select v-model="taskForm.priority" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition">
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Priority Level</label>
+                            <select v-model="taskForm.priority" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
                                 <option value="Low">Low Priority</option>
                                 <option value="Medium">Medium Priority</option>
                                 <option value="High">High Priority</option>
@@ -333,17 +354,17 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Target Date -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Target Due Date</label>
-                            <input v-model="taskForm.dueDate" type="date" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition">
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Target Due Date</label>
+                            <input v-model="taskForm.dueDate" type="date" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
                         </div>
 
                         <!-- Status Option -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Status Phase</label>
-                            <select v-model="taskForm.status" class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition">
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Status Phase</label>
+                            <select v-model="taskForm.status" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition min-h-[44px]">
                                 <option value="Todo">Todo</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Completed">Completed</option>
@@ -351,12 +372,13 @@
                         </div>
                     </div>
 
-                    <div class="pt-4 border-t border-slate-800 flex items-center justify-end space-x-3">
-                        <button type="button" @click="closeCreateModal" class="px-5 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-semibold transition">
+                    <!-- Persistent Modal Action Footer -->
+                    <div class="pt-4 border-t border-slate-800 flex items-center justify-end space-x-3 flex-shrink-0">
+                        <button type="button" @click="closeCreateModal" class="px-5 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-semibold transition min-h-[44px] flex-1 sm:flex-initial justify-center items-center">
                             Cancel
                         </button>
-                        <button type="submit" :disabled="loading" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/15 transition disabled:opacity-50">
-                            {{ loading ? 'Saving...' : (taskForm.id ? 'Save Updates' : 'Add to Board') }}
+                        <button type="submit" :disabled="loading" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/15 transition disabled:opacity-50 min-h-[44px] flex-1 sm:flex-initial justify-center items-center">
+                            {{ loading ? 'Saving...' : (taskForm.id ? 'Save' : 'Add Task') }}
                         </button>
                     </div>
                 </form>
@@ -364,68 +386,63 @@
         </div>
 
         <!-- TASK DETAIL & TIME STAMPED COMMENTS MODAL -->
-        <div v-if="isDetailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div @click="closeDetailModal" class="absolute inset-0 bg-[#07090e]/80 backdrop-blur-sm"></div>
+        <div v-if="isDetailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-0 sm:px-4">
+            <div @click="closeDetailModal" class="absolute inset-0 bg-[#07090e]/85 backdrop-blur-sm"></div>
             
-            <div class="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="relative bg-slate-900 border-t sm:border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh] mobile-bottom-sheet overflow-hidden animate-in fade-in slide-in-from-bottom-5 sm:zoom-in-95 duration-200">
                 
                 <!-- Detail Modal Header -->
-                <div class="flex items-start justify-between pb-4 border-b border-slate-800">
-                    <div>
-                        <span :class="getPriorityClass(activeDetailTask.priority)" class="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                <div class="flex items-start justify-between pb-4 border-b border-slate-800 flex-shrink-0">
+                    <div class="min-w-0 flex-1 pr-4">
+                        <span :class="getPriorityClass(activeDetailTask.priority)" class="text-[9px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
                             {{ activeDetailTask.priority }} Priority
                         </span>
-                        <h2 class="text-xl font-bold text-slate-100 mt-2.5 mb-1">{{ activeDetailTask.title }}</h2>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                        <h2 class="text-base sm:text-xl font-bold text-slate-100 mt-2 mb-1 truncate">{{ activeDetailTask.title }}</h2>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
                             <span>Status: <strong class="text-indigo-400">{{ activeDetailTask.status }}</strong></span>
                             <span class="text-slate-700">•</span>
-                            <span>Assignee: <strong class="text-slate-200">{{ activeDetailTask.owner || 'Unassigned' }}</strong></span>
+                            <span class="truncate">By: <strong class="text-slate-200">{{ activeDetailTask.owner || 'Unassigned' }}</strong></span>
                             <span v-if="activeDetailTask.dueDate" class="text-slate-700">•</span>
-                            <span v-if="activeDetailTask.dueDate">Due: <strong class="text-slate-300">{{ formatDate(activeDetailTask.dueDate) }}</strong></span>
+                            <span v-if="activeDetailTask.dueDate" class="truncate">Due: <strong class="text-slate-300">{{ formatDate(activeDetailTask.dueDate) }}</strong></span>
                         </div>
                     </div>
-                    <button @click="closeDetailModal" class="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition">
+                    <button @click="closeDetailModal" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition flex-shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
                 <!-- Scrollable Body Content -->
-                <div class="flex-1 overflow-y-auto py-5 pr-1 space-y-6 scrollbar-hide">
+                <div class="flex-1 overflow-y-auto py-4 space-y-5 scrollbar-hide scroll-touch-momentum">
                     
                     <!-- Description Panel -->
                     <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Scope Specification</h4>
-                        <p class="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
+                        <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Scope Specification</h4>
+                        <p class="text-xs sm:text-sm text-slate-300 whitespace-pre-line leading-relaxed">
                             {{ activeDetailTask.description || 'No detailed background scope added.' }}
                         </p>
                     </div>
 
                     <!-- Stamped Comment Module -->
                     <div>
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center justify-between">
+                        <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center justify-between">
                             <span>Comment Log Thread</span>
-                            <span class="text-[10px] bg-slate-800 px-2.5 py-0.5 rounded text-indigo-400 font-bold">
+                            <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-indigo-400 font-bold">
                                 {{ activeDetailTaskComments.length }} Entries
                             </span>
                         </h4>
 
                         <!-- Post comment inline action block -->
-                        <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 flex flex-col space-y-3 mb-4">
+                        <div class="bg-slate-950/80 p-3 sm:p-4 rounded-xl border border-slate-800 flex flex-col space-y-3 mb-4">
                             <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-400 font-medium">Publishing Comment As:</span>
-                                <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
-                                    <button @click="newComment.author = partners.partner1" :class="newComment.author === partners.partner1 ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-md text-[10px] transition">
-                                        {{ partners.partner1 }}
-                                    </button>
-                                    <button @click="newComment.author = partners.partner2" :class="newComment.author === partners.partner2 ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-1 rounded-md text-[10px] transition">
-                                        {{ partners.partner2 }}
-                                    </button>
-                                </div>
+                                <span class="text-slate-400 font-medium">As Collaborator:</span>
+                                <select v-model="newComment.author" class="px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[36px]">
+                                    <option v-for="col in collaborators" :key="col.id" :value="col.name">{{ col.name }}</option>
+                                </select>
                             </div>
                             
                             <div class="flex space-x-2">
-                                <input v-model="newComment.text" type="text" placeholder="Type milestone update, question, or blocking issue..." @keyup.enter="postComment" class="flex-1 px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <button @click="postComment" :disabled="loading || !newComment.text.trim()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition rounded-xl text-white font-bold text-sm disabled:opacity-50">
+                                <input v-model="newComment.text" type="text" placeholder="Type update, log or blocking issue..." @keyup.enter="postComment" class="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[44px]">
+                                <button @click="postComment" :disabled="loading || !newComment.text.trim()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 transition rounded-xl text-white font-bold text-sm disabled:opacity-50 min-h-[44px] flex items-center justify-center">
                                     {{ loading ? '...' : 'Send' }}
                                 </button>
                             </div>
@@ -433,22 +450,22 @@
 
                         <!-- Render Comments Timeline -->
                         <div v-if="activeDetailTaskComments.length > 0" class="space-y-3">
-                            <div v-for="comment in activeDetailTaskComments" :key="comment.id" class="bg-slate-950/40 border border-slate-800/60 rounded-xl p-3.5 flex flex-col">
+                            <div v-for="comment in activeDetailTaskComments" :key="comment.id" class="bg-slate-950/40 border border-slate-800/60 rounded-xl p-3 flex flex-col">
                                 <div class="flex items-center justify-between mb-1.5">
                                     <div class="flex items-center space-x-2">
-                                        <div :class="comment.author === partners.partner1 ? 'bg-indigo-600 text-indigo-100' : 'bg-violet-600 text-violet-100'" class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold">
+                                        <div :class="getCollaboratorColor(comment.author)" class="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[9px] text-white font-bold select-none">
                                             {{ comment.author.charAt(0) }}
                                         </div>
                                         <span class="text-xs font-bold text-slate-300">{{ comment.author }}</span>
                                     </div>
-                                    <span class="text-[10px] text-slate-500">{{ formatTimestamp(comment.timestamp) }}</span>
+                                    <span class="text-[9px] text-slate-500">{{ formatTimestamp(comment.timestamp) }}</span>
                                 </div>
                                 <p class="text-xs text-slate-300 pl-7 leading-relaxed">{{ comment.text }}</p>
                             </div>
                         </div>
 
-                        <div v-else class="text-center py-8 bg-slate-950/20 border border-dashed border-slate-800 rounded-xl">
-                            <p class="text-xs text-slate-500">No time-stamped task log comment threads.</p>
+                        <div v-else class="text-center py-6 bg-slate-950/20 border border-dashed border-slate-800 rounded-xl">
+                            <p class="text-xs text-slate-500">No comments on this task yet.</p>
                         </div>
 
                     </div>
@@ -456,13 +473,13 @@
                 </div>
 
                 <!-- Footer Operations -->
-                <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
-                    <button @click="openEditModal(activeDetailTask)" class="flex items-center space-x-2 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition">
+                <div class="pt-4 border-t border-slate-800 flex items-center justify-between flex-shrink-0">
+                    <button @click="openEditModal(activeDetailTask)" class="flex items-center space-x-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition py-2 min-h-[44px]">
                         <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                        <span>Modify Card Details</span>
+                        <span>Edit Details</span>
                     </button>
-                    <button @click="closeDetailModal" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition">
-                        Dismiss Panel
+                    <button @click="closeDetailModal" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
+                        Dismiss
                     </button>
                 </div>
 
@@ -470,77 +487,70 @@
         </div>
 
         <!-- SETTINGS / SHEET INTEGRATION MODAL -->
-        <div v-if="isSettingsModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div @click="closeSettingsModal" class="absolute inset-0 bg-[#07090e]/80 backdrop-blur-sm"></div>
+        <div v-if="isSettingsModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-0 sm:px-4">
+            <div @click="closeSettingsModal" class="absolute inset-0 bg-[#07090e]/85 backdrop-blur-sm"></div>
             
-            <div class="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+            <div class="relative bg-slate-900 border-t sm:border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh] mobile-bottom-sheet overflow-hidden animate-in fade-in slide-in-from-bottom-5 sm:zoom-in-95 duration-200">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 flex-shrink-0">
                     <div class="flex items-center space-x-2">
                         <i data-lucide="sliders" class="w-5 h-5 text-indigo-400"></i>
-                        <h3 class="text-lg font-bold text-slate-100">Workspace Integrations</h3>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-100">Workspace Integrations</h3>
                     </div>
-                    <button @click="closeSettingsModal" class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-slate-200 transition">
+                    <button @click="closeSettingsModal" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition min-w-[40px] min-h-[40px] flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
                 <!-- Scrollable Fields -->
-                <div class="flex-1 overflow-y-auto pr-1 space-y-5 scrollbar-hide">
+                <div class="flex-1 overflow-y-auto pr-1 space-y-4 scrollbar-hide scroll-touch-momentum">
                     
-                    <!-- Collaborator Names -->
-                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Partner Identities</h4>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1">Partner 1</label>
-                                <input v-model="partners.partner1" type="text" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1">Partner 2</label>
-                                <input v-model="partners.partner2" type="text" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                            </div>
+                    <!-- Collaborator Directory Quick Link -->
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">Collaborators List</h4>
+                            <p class="text-[10px] text-slate-500">Edit, add, or delete team workspace members.</p>
                         </div>
-                        <button @click="savePartnersNames" class="mt-3.5 w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs py-2 rounded-lg transition">
-                            Save Partner Names
+                        <button @click="openCollaboratorsModalFromSettings" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex-shrink-0 min-h-[38px] flex items-center justify-center">
+                            Open Directory
                         </button>
                     </div>
 
                     <!-- Google Sheets Web App Connection -->
                     <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Google Sheets Cloud Sync</h4>
-                        <p class="text-[11px] text-slate-400 leading-relaxed mb-4">
-                            To collaborate live with your partner across GitHub Pages, paste the deployed **Google Apps Script Web App URL** below. Refer to the playbook for instructions.
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Google Sheets Cloud Sync</h4>
+                        <p class="text-[11px] text-slate-400 leading-relaxed mb-3">
+                            Paste the deployed **Google Apps Script Web App URL** below to synchronize changes automatically across multiple devices.
                         </p>
 
                         <div class="space-y-3">
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1">Web App API URL</label>
-                                <input v-model="sheetUrlInput" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2.5 font-mono text-xs bg-slate-900 border border-slate-800 rounded-xl text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Web App API URL</label>
+                                <input v-model="sheetUrlInput" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2.5 font-mono text-[11px] bg-slate-900 border border-slate-800 rounded-xl text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[44px]">
                             </div>
 
                             <div class="flex items-center space-x-2 justify-end pt-1">
-                                <button v-if="sheetUrl" @click="clearSheetConfig" class="px-3.5 py-1.5 bg-red-950/40 text-red-400 hover:bg-red-950 hover:text-white rounded-lg text-xs font-semibold transition">
-                                    Disconnect Sheets
+                                <button v-if="sheetUrl" @click="clearSheetConfig" class="px-3.5 py-2.5 bg-red-950/40 text-red-400 hover:bg-red-950 hover:text-white rounded-lg text-xs font-semibold transition min-h-[38px] flex items-center justify-center">
+                                    Disconnect
                                 </button>
-                                <button @click="saveSheetUrl" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition">
-                                    Connect & Sync API
+                                <button @click="saveSheetUrl" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition min-h-[38px] flex items-center justify-center">
+                                    Connect & Sync
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- JSON Backup File Utilities -->
-                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-                        <div>
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Local JSON File Backup</h4>
-                            <p class="text-[10px] text-slate-500">Download/Upload state manually.</p>
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">JSON Local Backup</h4>
+                            <p class="text-[10px] text-slate-500">Download/Upload board state manually.</p>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                        <div class="flex items-center space-x-1.5 flex-shrink-0">
+                            <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition min-h-[38px] flex items-center justify-center">
                                 <span>Import</span>
                                 <input type="file" @change="importBoard" class="hidden" accept=".json">
                             </label>
-                            <button @click="exportBoard" class="bg-indigo-600/10 hover:bg-indigo-600/25 text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                            <button @click="exportBoard" class="bg-indigo-600/10 hover:bg-indigo-600/25 text-indigo-400 px-3 py-2 rounded-lg text-xs font-bold transition min-h-[38px] flex items-center justify-center">
                                 Export
                             </button>
                         </div>
@@ -548,9 +558,119 @@
 
                 </div>
 
-                <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end">
-                    <button @click="closeSettingsModal" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">
-                        Finish Config
+                <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end flex-shrink-0">
+                    <button @click="closeSettingsModal" class="w-full sm:w-auto px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition min-h-[44px] flex items-center justify-center">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLLABORATORS DIRECTORY MODAL (CRUD FOR USERS) -->
+        <div v-if="isCollaboratorsModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-0 sm:px-4">
+            <div @click="closeCollaboratorsModal" class="absolute inset-0 bg-[#07090e]/85 backdrop-blur-sm"></div>
+            
+            <div class="relative bg-slate-900 border-t sm:border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] mobile-bottom-sheet overflow-hidden animate-in fade-in slide-in-from-bottom-5 sm:zoom-in-95 duration-200">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 flex-shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i>
+                        <h3 class="text-base sm:text-lg font-bold text-slate-100">Collaborators Directory</h3>
+                    </div>
+                    <button @click="closeCollaboratorsModal" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition min-w-[40px] min-h-[40px] flex items-center justify-center">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- ADD NEW COLLABORATOR (CREATE) -->
+                <div class="bg-slate-950/60 p-3 sm:p-4 rounded-xl border border-slate-800 mb-4 flex-shrink-0">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Add New Member</label>
+                    <div class="flex space-x-2">
+                        <input v-model="newColName" type="text" placeholder="Sarah..." @keyup.enter="addCollaborator" class="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[44px]">
+                        <button @click="addCollaborator" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 transition rounded-xl text-white font-bold text-sm min-h-[44px] flex items-center justify-center">
+                            Add
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIST COLLABORATORS (READ, UPDATE, DELETE) -->
+                <div class="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide scroll-touch-momentum">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2 px-1">Active Members ({{ collaborators.length }})</label>
+                    
+                    <div v-for="col in collaborators" :key="col.id" class="bg-slate-950/40 border border-slate-800/60 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <div :class="col.color" class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs select-none flex-shrink-0">
+                                {{ col.name.charAt(0) }}
+                            </div>
+                            
+                            <!-- Editing State (Update name) -->
+                            <div v-if="editingColId === col.id" class="flex items-center space-x-2 flex-1 min-w-0">
+                                <input v-model="editingColName" type="text" class="flex-1 px-2.5 py-1.5 bg-slate-900 border border-indigo-500/80 rounded-lg text-slate-200 text-sm focus:outline-none min-h-[36px]">
+                                <button @click="saveEditCollaborator(col)" class="p-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white transition flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center" title="Save">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button @click="editingColId = null" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 transition flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center" title="Cancel">
+                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Display State (Read) -->
+                            <div v-else class="flex flex-col min-w-0">
+                                <span class="text-sm font-semibold text-slate-200 truncate">{{ col.name }}</span>
+                                <span class="text-[10px] text-slate-500">{{ getOwnerTaskCount(col.name) }} active tasks</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Controls (Update & Delete triggers) -->
+                        <div v-if="editingColId !== col.id" class="flex items-center space-x-1 flex-shrink-0">
+                            <button @click="startEditCollaborator(col)" class="p-2 hover:bg-slate-850 text-slate-400 hover:text-slate-200 rounded-lg transition min-w-[38px] min-h-[38px] flex items-center justify-center" title="Rename">
+                                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button @click="confirmDeleteCollaborator(col)" class="p-2 hover:bg-red-950/40 text-slate-400 hover:text-red-400 rounded-lg transition min-w-[38px] min-h-[38px] flex items-center justify-center" title="Remove" :disabled="collaborators.length <= 1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end flex-shrink-0">
+                    <button @click="closeCollaboratorsModal" class="w-full sm:w-auto px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition min-h-[44px] flex items-center justify-center">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLLABORATOR DELETE & REASSIGNMENT DIALOG -->
+        <div v-if="isColDeleteConfirmOpen" class="fixed inset-0 z-[60] flex items-center justify-center px-4">
+            <div @click="isColDeleteConfirmOpen = false" class="absolute inset-0 bg-[#07090e]/95 backdrop-blur-sm"></div>
+            
+            <div class="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
+                <div class="w-12 h-12 rounded-full bg-red-950/40 border border-red-500/40 flex items-center justify-center mx-auto mb-4 text-red-400">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                
+                <h3 class="text-base sm:text-lg font-bold text-slate-100 mb-1.5">Delete Collaborator?</h3>
+                <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+                    You are deleting <strong class="text-slate-200">{{ colToDelete?.name }}</strong>. Please specify who should inherit their current outstanding tasks:
+                </p>
+
+                <!-- Reassign Target selection -->
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 mb-5 text-left">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Reassign Outstanding Tasks To</label>
+                    <select v-model="reassignTargetId" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 min-h-[40px]">
+                        <option value="Unassigned">Leave Unassigned</option>
+                        <option v-for="col in collaborators.filter(c => c.id !== colToDelete?.id)" :key="col.id" :value="col.id">
+                            {{ col.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-center space-x-3">
+                    <button @click="isColDeleteConfirmOpen = false" class="w-24 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
+                        Cancel
+                    </button>
+                    <button @click="executeDeleteCollaborator" class="w-24 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
+                        Confirm
                     </button>
                 </div>
             </div>
@@ -565,16 +685,16 @@
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                 </div>
                 
-                <h3 class="text-lg font-bold text-slate-100 mb-1.5">Delete Task Card?</h3>
+                <h3 class="text-base sm:text-lg font-bold text-slate-100 mb-1.5">Delete Task Card?</h3>
                 <p class="text-xs text-slate-400 mb-5 leading-relaxed">
                     This permanently deletes this card from Google Sheets. Associated comments will also be discarded.
                 </p>
 
                 <div class="flex items-center justify-center space-x-3">
-                    <button @click="cancelDelete" class="w-24 py-2 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition">
+                    <button @click="cancelDelete" class="w-24 py-3 rounded-xl border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition min-h-[44px] flex items-center justify-center">
                         Cancel
                     </button>
-                    <button @click="executeDelete" :disabled="loading" class="w-24 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50">
+                    <button @click="executeDelete" :disabled="loading" class="w-24 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50 min-h-[44px] flex items-center justify-center">
                         {{ loading ? '...' : 'Delete' }}
                     </button>
                 </div>
@@ -582,7 +702,7 @@
         </div>
 
         <!-- TOAST SYSTEM (NON-INTRUSIVE NOTIFICATIONS) -->
-        <div class="fixed bottom-6 right-6 space-y-2 z-50">
+        <div class="fixed bottom-6 right-6 space-y-2 z-50 left-6 sm:left-auto">
             <div v-for="toast in toasts" :key="toast.id" 
                  :class="toast.type === 'error' ? 'bg-red-950 border-red-500 text-red-200' : 'bg-slate-900 border-indigo-500 text-slate-200'"
                  class="px-4 py-3 border rounded-xl shadow-2xl flex items-center space-x-3 animate-in slide-in-from-bottom-5 duration-200">
@@ -608,10 +728,11 @@
                 const sheetUrl = ref(localStorage.getItem('gtask_sheet_url') || '');
                 const sheetUrlInput = ref(localStorage.getItem('gtask_sheet_url') || '');
                 
-                const partners = ref({
-                    partner1: localStorage.getItem('gtask_partner1') || 'Alex',
-                    partner2: localStorage.getItem('gtask_partner2') || 'Taylor'
-                });
+                // Dynamic Collaborator Directory State (CRUD Core)
+                const collaborators = ref(JSON.parse(localStorage.getItem('gtask_collaborators')) || [
+                    { id: 'col_1', name: 'Alex', color: 'bg-indigo-600' },
+                    { id: 'col_2', name: 'Taylor', color: 'bg-violet-600' }
+                ]);
 
                 // Filter constraints
                 const filterOwner = ref('All');
@@ -624,13 +745,27 @@
                 const isDetailModalOpen = ref(false);
                 const isSettingsModalOpen = ref(false);
                 const isDeleteConfirmOpen = ref(false);
+                const isCollaboratorsModalOpen = ref(false);
+                const isColDeleteConfirmOpen = ref(false);
+
+                // Collaborator form states
+                const newColName = ref('');
+                const editingColId = ref(null);
+                const editingColName = ref('');
+                const colToDelete = ref(null);
+                const reassignTargetId = ref('Unassigned');
+
+                const colorsList = [
+                    'bg-indigo-600', 'bg-violet-600', 'bg-emerald-600', 
+                    'bg-rose-600', 'bg-amber-600', 'bg-sky-600', 'bg-fuchsia-600'
+                ];
 
                 // Toast status container
                 const toasts = ref([]);
                 const pushToast = (message, type = 'info') => {
                     const id = Date.now();
                     toasts.value.push({ id, message, type });
-                    nextTick(() => lucide.replace());
+                    safeReplaceIcons();
                     setTimeout(() => {
                         toasts.value = toasts.value.filter(t => t.id !== id);
                     }, 4000);
@@ -654,6 +789,19 @@
                 });
 
                 const taskToDeleteId = ref(null);
+
+                // Safe Lucide icon rendering helper that supports modern Lucide releases
+                const safeReplaceIcons = () => {
+                    nextTick(() => {
+                        if (typeof lucide !== 'undefined') {
+                            if (typeof lucide.createIcons === 'function') {
+                                lucide.createIcons();
+                            } else if (typeof lucide.replace === 'function') {
+                                lucide.replace();
+                            }
+                        }
+                    });
+                };
 
                 // Utilities
                 const formatDate = (dateStr) => {
@@ -691,6 +839,11 @@
 
                 const getCommentCount = (taskId) => {
                     return comments.value.filter(c => c.taskId === taskId).length;
+                };
+
+                const getCollaboratorColor = (ownerName) => {
+                    const col = collaborators.value.find(c => c.name === ownerName);
+                    return col ? col.color : 'bg-slate-600';
                 };
 
                 // Filters
@@ -753,20 +906,18 @@
                         loadLocalCache();
                     } finally {
                         loading.value = false;
-                        nextTick(() => lucide.replace());
+                        safeReplaceIcons();
                     }
                 };
 
                 const triggerApiCall = async (payload) => {
                     if (!sheetUrl.value) {
-                        // Offline Execution Fallback
                         processLocalAction(payload);
                         return;
                     }
 
                     loading.value = true;
                     try {
-                        // We send payload as plain text to avoid complex CORS preflight request triggers
                         const response = await fetch(sheetUrl.value, {
                             method: 'POST',
                             mode: 'cors',
@@ -779,7 +930,6 @@
                             comments.value = res.comments || [];
                             saveLocalCache();
                             
-                            // Re-sync detail modal state reference
                             if (activeDetailTask.value) {
                                 const current = tasks.value.find(t => t.id === activeDetailTask.value.id);
                                 if (current) activeDetailTask.value = current;
@@ -791,10 +941,10 @@
                     } catch (e) {
                         console.error(e);
                         pushToast("Could not sync transaction to cloud sheet.", "error");
-                        processLocalAction(payload); // fallback locally
+                        processLocalAction(payload); 
                     } finally {
                         loading.value = false;
-                        nextTick(() => lucide.replace());
+                        safeReplaceIcons();
                     }
                 };
 
@@ -847,12 +997,13 @@
                         comments.value = cachedC ? JSON.parse(cachedC) : [];
                     } else {
                         // Bootstrap mock data
+                        const initialOwner = collaborators.value[0]?.name || 'Alex';
                         tasks.value = [
                             {
                                 id: 'mock_1',
                                 title: 'Deploy Dashboard frontend to GitHub Pages',
                                 description: 'Commit this index.html file to your repo and enable GitHub Pages within the setting tab.',
-                                owner: partners.value.partner1,
+                                owner: initialOwner,
                                 priority: 'High',
                                 status: 'Todo',
                                 dueDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
@@ -863,7 +1014,7 @@
                             {
                                 id: 'mc_1',
                                 taskId: 'mock_1',
-                                author: partners.value.partner1,
+                                author: initialOwner,
                                 text: 'Configure Google Apps script code for live updates.',
                                 timestamp: new Date().toISOString()
                             }
@@ -875,6 +1026,116 @@
                 const saveLocalCache = () => {
                     localStorage.setItem('gtask_tasks', JSON.stringify(tasks.value));
                     localStorage.setItem('gtask_comments', JSON.stringify(comments.value));
+                };
+
+                // COLLABORATOR USER CRUD LOGIC
+                const saveCollaboratorsList = () => {
+                    localStorage.setItem('gtask_collaborators', JSON.stringify(collaborators.value));
+                };
+
+                const addCollaborator = () => {
+                    const name = newColName.value.trim();
+                    if (!name) return;
+                    
+                    if (collaborators.value.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                        pushToast("A collaborator with this name already exists!", "error");
+                        return;
+                    }
+
+                    const randomColor = colorsList[Math.floor(Math.random() * colorsList.length)];
+                    const newCol = {
+                        id: 'col_' + Date.now(),
+                        name: name,
+                        color: randomColor
+                    };
+
+                    collaborators.value.push(newCol);
+                    saveCollaboratorsList();
+                    newColName.value = '';
+                    pushToast(`Added "${name}" to directory.`);
+                };
+
+                const startEditCollaborator = (col) => {
+                    editingColId.value = col.id;
+                    editingColName.value = col.name;
+                };
+
+                const saveEditCollaborator = async (col) => {
+                    const oldName = col.name;
+                    const newName = editingColName.value.trim();
+                    if (!newName) return;
+
+                    if (oldName === newName) {
+                        editingColId.value = null;
+                        return;
+                    }
+
+                    if (collaborators.value.some(c => c.id !== col.id && c.name.toLowerCase() === newName.toLowerCase())) {
+                        pushToast("A collaborator with this name already exists!", "error");
+                        return;
+                    }
+
+                    col.name = newName;
+                    saveCollaboratorsList();
+
+                    // Cascade update task ownership (Referential Integrity)
+                    let matchedTaskCount = 0;
+                    for (const t of tasks.value) {
+                        if (t.owner === oldName) {
+                            t.owner = newName;
+                            await triggerApiCall({
+                                action: 'saveTask',
+                                data: t
+                            });
+                            matchedTaskCount++;
+                        }
+                    }
+
+                    // Cascade update local comments list authors
+                    comments.value.forEach(c => {
+                        if (c.author === oldName) c.author = newName;
+                    });
+                    saveLocalCache();
+
+                    editingColId.value = null;
+                    pushToast(`Renamed ${oldName} to ${newName}. Updated ${matchedTaskCount} assignments.`);
+                };
+
+                const confirmDeleteCollaborator = (col) => {
+                    colToDelete.value = col;
+                    reassignTargetId.value = 'Unassigned';
+                    isColDeleteConfirmOpen.value = true;
+                };
+
+                const executeDeleteCollaborator = async () => {
+                    if (!colToDelete.value) return;
+
+                    const oldName = colToDelete.value.name;
+                    let targetName = 'Unassigned';
+                    
+                    if (reassignTargetId.value !== 'Unassigned') {
+                        const targetCol = collaborators.value.find(c => c.id === reassignTargetId.value);
+                        if (targetCol) targetName = targetCol.name;
+                    }
+
+                    // Cascade reassignment
+                    for (const t of tasks.value) {
+                        if (t.owner === oldName) {
+                            t.owner = targetName;
+                            await triggerApiCall({
+                                action: 'saveTask',
+                                data: t
+                            });
+                        }
+                    }
+
+                    // Remove from collaborators registry
+                    collaborators.value = collaborators.value.filter(c => c.id !== colToDelete.value.id);
+                    saveCollaboratorsList();
+
+                    isColDeleteConfirmOpen.value = false;
+                    colToDelete.value = null;
+                    pushToast(`Purged user. Tasks reassigned to ${targetName}.`);
                 };
 
                 // ACTION WRAPPERS
@@ -916,7 +1177,7 @@
                         id: null,
                         title: '',
                         description: '',
-                        owner: partners.value.partner1,
+                        owner: collaborators.value[0]?.name || 'Unassigned',
                         priority: 'Medium',
                         status: 'Todo',
                         dueDate: ''
@@ -947,7 +1208,7 @@
 
                 const openDetailModal = (task) => {
                     activeDetailTask.value = task;
-                    newComment.value.author = partners.value.partner1;
+                    newComment.value.author = collaborators.value[0]?.name || 'Unassigned';
                     newComment.value.text = '';
                     isDetailModalOpen.value = true;
                 };
@@ -966,10 +1227,18 @@
                     isSettingsModalOpen.value = false;
                 };
 
-                const savePartnersNames = () => {
-                    localStorage.setItem('gtask_partner1', partners.value.partner1);
-                    localStorage.setItem('gtask_partner2', partners.value.partner2);
-                    pushToast("Partners updated successfully!");
+                const openCollaboratorsModal = () => {
+                    newColName.value = '';
+                    isCollaboratorsModalOpen.value = true;
+                };
+
+                const closeCollaboratorsModal = () => {
+                    isCollaboratorsModalOpen.value = false;
+                };
+
+                const openCollaboratorsModalFromSettings = () => {
+                    isSettingsModalOpen.value = false;
+                    openCollaboratorsModal();
                 };
 
                 const saveSheetUrl = () => {
@@ -1013,7 +1282,7 @@
                     const dataObj = {
                         tasks: tasks.value,
                         comments: comments.value,
-                        partners: partners.value
+                        collaborators: collaborators.value
                     };
                     const blob = new Blob([JSON.stringify(dataObj, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
@@ -1035,8 +1304,9 @@
                             if (imported.tasks) {
                                 tasks.value = imported.tasks;
                                 comments.value = imported.comments || [];
-                                if (imported.partners) {
-                                    partners.value = imported.partners;
+                                if (imported.collaborators) {
+                                    collaborators.value = imported.collaborators;
+                                    saveCollaboratorsList();
                                 }
                                 saveLocalCache();
                                 pushToast("Backup imported successfully!");
@@ -1053,11 +1323,11 @@
                     if (sheetUrl.value) {
                         fetchTasks();
                     }
-                    nextTick(() => lucide.replace());
+                    safeReplaceIcons();
                 });
 
-                watch([isCreateModalOpen, isDetailModalOpen, isSettingsModalOpen, isDeleteConfirmOpen], () => {
-                    nextTick(() => lucide.replace());
+                watch([isCreateModalOpen, isDetailModalOpen, isSettingsModalOpen, isDeleteConfirmOpen, isCollaboratorsModalOpen, isColDeleteConfirmOpen], () => {
+                    safeReplaceIcons();
                 });
 
                 return {
@@ -1066,7 +1336,7 @@
                     loading,
                     sheetUrl,
                     sheetUrlInput,
-                    partners,
+                    collaborators,
                     filterOwner,
                     filterPriority,
                     filterStatus,
@@ -1075,6 +1345,13 @@
                     isDetailModalOpen,
                     isSettingsModalOpen,
                     isDeleteConfirmOpen,
+                    isCollaboratorsModalOpen,
+                    isColDeleteConfirmOpen,
+                    newColName,
+                    editingColId,
+                    editingColName,
+                    colToDelete,
+                    reassignTargetId,
                     toasts,
                     taskForm,
                     activeDetailTask,
@@ -1087,6 +1364,7 @@
                     getStatusBadgeClass,
                     getOwnerTaskCount,
                     getCommentCount,
+                    getCollaboratorColor,
                     clearFilters,
                     fetchTasks,
                     toggleStatus,
@@ -1099,7 +1377,14 @@
                     closeDetailModal,
                     openSettingsModal,
                     closeSettingsModal,
-                    savePartnersNames,
+                    openCollaboratorsModal,
+                    closeCollaboratorsModal,
+                    openCollaboratorsModalFromSettings,
+                    addCollaborator,
+                    startEditCollaborator,
+                    saveEditCollaborator,
+                    confirmDeleteCollaborator,
+                    executeDeleteCollaborator,
                     saveSheetUrl,
                     clearSheetConfig,
                     confirmDelete,
